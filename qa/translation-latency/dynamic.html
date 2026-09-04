@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>TWP latency fixture: dynamic feed</title>
+    <link rel="stylesheet" href="fixture.css" />
+    <script src="benchmark.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1 data-bench-source="Dynamic and infinite-scroll translation" data-bench-id="dynamic-title">Dynamic and infinite-scroll translation</h1>
+      <p data-bench-source="New cards are appended in bursts as the reader approaches the end of the feed." data-bench-id="dynamic-intro">New cards are appended in bursts as the reader approaches the end of the feed.</p>
+    </header>
+    <main id="feed"></main>
+    <div id="sentinel">More content will be appended above this marker.</div>
+    <script>
+      const feed = document.getElementById("feed");
+      let nextCard = 1;
+      let burstCount = 0;
+
+      function appendBurst(size = 16) {
+        const fragment = document.createDocumentFragment();
+        for (let offset = 0; offset < size; offset++) {
+          const cardNumber = nextCard++;
+          const card = document.createElement("article");
+          const heading = document.createElement("h2");
+          const paragraph = document.createElement("p");
+          card.className = "card";
+          heading.textContent = `Dynamically inserted report ${cardNumber}`;
+          paragraph.textContent = `This report was inserted in client-rendered burst ${burstCount + 1} and should be translated before ordinary scrolling reveals it.`;
+          heading.dataset.benchSource = heading.textContent;
+          heading.dataset.benchId = `dynamic-heading-${cardNumber}`;
+          paragraph.dataset.benchSource = paragraph.textContent;
+          paragraph.dataset.benchId = `dynamic-paragraph-${cardNumber}`;
+          card.append(heading, paragraph);
+          fragment.append(card);
+        }
+        feed.append(fragment);
+        burstCount++;
+      }
+
+      appendBurst(28);
+      new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting) && burstCount < 6) {
+            appendBurst();
+          }
+        },
+        { rootMargin: "250% 0px" }
+      ).observe(document.getElementById("sentinel"));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>TWP latency fixture: static article</title>
+    <link rel="stylesheet" href="fixture.css" />
+    <script src="benchmark.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1 data-bench-source="A fixed long article for translation latency testing" data-bench-id="static-title">A fixed long article for translation latency testing</h1>
+      <p data-bench-source="Every paragraph is generated before page translation begins, so the document is stable between runs." data-bench-id="static-intro">Every paragraph is generated before page translation begins, so the document is stable between runs.</p>
+    </header>
+    <main id="article"></main>
+    <script>
+      const article = document.getElementById("article");
+      const sentences = [
+        "The research team reviewed the evidence carefully before publishing its findings.",
+        "Reliable systems should remain responsive while background work continues.",
+        "Readers expect translated text to be ready before it enters the visible area.",
+        "A narrow implementation is easier to verify and safer to maintain.",
+      ];
+      for (let index = 0; index < 120; index++) {
+        const section = document.createElement("section");
+        const heading = document.createElement("h2");
+        const paragraph = document.createElement("p");
+        heading.textContent = `Article section ${index + 1}`;
+        paragraph.textContent = `${sentences[index % sentences.length]} This is fixed sample ${index + 1}.`;
+        heading.dataset.benchSource = heading.textContent;
+        heading.dataset.benchId = `static-heading-${index + 1}`;
+        paragraph.dataset.benchSource = paragraph.textContent;
+        paragraph.dataset.benchId = `static-paragraph-${index + 1}`;
+        section.append(heading, paragraph);
+        article.append(section);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>TWP latency fixture: structured content</title>
+    <link rel="stylesheet" href="fixture.css" />
+    <script src="benchmark.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1 data-bench-source="Structured translation coverage" data-bench-id="structured-title">Structured translation coverage</h1>
+      <p data-bench-source="This sentence contains emphasized words and a linked reference." data-bench-id="structured-inline">This sentence contains <strong>emphasized words</strong> and a <a href="#form">linked reference</a>.</p>
+    </header>
+
+    <section id="form">
+      <h2 data-bench-source="Translatable form attributes" data-bench-id="structured-form-heading">Translatable form attributes</h2>
+      <input
+        data-bench-attribute="placeholder"
+        data-bench-source="Enter a detailed search question"
+        data-bench-id="structured-placeholder"
+        placeholder="Enter a detailed search question"
+      />
+      <button
+        data-bench-attribute="title"
+        data-bench-source="Submit the current research request"
+        data-bench-id="structured-title-attribute"
+        title="Submit the current research request"
+      >Submit the current research request</button>
+    </section>
+
+    <section>
+      <h2 data-bench-source="Content that must remain original" data-bench-id="structured-exclusion-heading">Content that must remain original</h2>
+      <p class="notranslate">DO NOT TRANSLATE THIS SENTENCE.</p>
+      <pre>const stableValue = "do not rewrite code samples";</pre>
+    </section>
+
+    <section id="shadow-host"></section>
+
+    <iframe
+      title="Same-origin translated frame"
+      srcdoc="<!doctype html><html lang='en'><body><h2>Frame translation heading</h2><p>Text inside a same-origin frame should follow the same scheduling path.</p></body></html>"
+    ></iframe>
+
+    <script>
+      const shadow = document.getElementById("shadow-host").attachShadow({ mode: "open" });
+      const heading = document.createElement("h2");
+      const paragraph = document.createElement("p");
+      heading.textContent = "Open shadow root heading";
+      paragraph.textContent = "Text inside an open shadow root should be discovered and translated.";
+      heading.dataset.benchSource = heading.textContent;
+      heading.dataset.benchId = "structured-shadow-heading";
+      paragraph.dataset.benchSource = paragraph.textContent;
+      paragraph.dataset.benchId = "structured-shadow-paragraph";
+      shadow.append(heading, paragraph);
+
+      const main = document.createElement("main");
+      for (let index = 0; index < 70; index++) {
+        const section = document.createElement("section");
+        const paragraph = document.createElement("p");
+        paragraph.textContent = `Structured block ${index + 1} keeps its nested inline translation context.`;
+        paragraph.dataset.benchId = `structured-block-${index + 1}`;
+        const strong = document.createElement("strong");
+        strong.textContent = " Important evidence remains attached.";
+        paragraph.append(strong);
+        paragraph.dataset.benchSource = paragraph.textContent;
+        section.append(paragraph);
+        main.append(section);
+      }
+      document.body.append(main);
+    </script>
+  </body>
+</html>

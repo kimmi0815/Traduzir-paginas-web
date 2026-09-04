@@ -4,4 +4,6 @@ test
 meta.txt
 meta2.txt
 result
+.playwright-cli/
+output/playwright/
 *.zip

@@ -404,37 +404,100 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   let translateNewNodesTimerHandler;
   let newNodes = [];
   let removedNodes = [];
+  let mutationObserverEnabled = false;
+  let knownTextNodes = new WeakSet();
+  let knownAttributes = new WeakMap();
 
   let nodesToRestore = [];
 
+  const mutationDebounceMs = 50;
+  const mutationMaxWaitMs = 200;
+  let firstPendingMutationAt = 0;
+
+  function rememberPiece(piece) {
+    piece.nodes.forEach((node) => knownTextNodes.add(node));
+  }
+
+  function rememberAttribute(attribute) {
+    let attributeNames = knownAttributes.get(attribute.node);
+    if (!attributeNames) {
+      attributeNames = new Set();
+      knownAttributes.set(attribute.node, attributeNames);
+    }
+    attributeNames.add(attribute.attrName);
+  }
+
+  function isKnownAttribute(attribute) {
+    const attributeNames = knownAttributes.get(attribute.node);
+    return attributeNames ? attributeNames.has(attribute.attrName) : false;
+  }
+
+  function scheduleTranslateNewNodes() {
+    if (!pageIsVisible || pageLanguageState !== "translated") return;
+
+    const now = performance.now();
+    if (!firstPendingMutationAt) firstPendingMutationAt = now;
+    clearTimeout(translateNewNodesTimerHandler);
+
+    const elapsed = now - firstPendingMutationAt;
+    const wait = Math.max(0, Math.min(mutationDebounceMs, mutationMaxWaitMs - elapsed));
+    translateNewNodesTimerHandler = setTimeout(translateNewNodes, wait);
+  }
+
   function translateNewNodes() {
+    clearTimeout(translateNewNodesTimerHandler);
+    translateNewNodesTimerHandler = null;
+    firstPendingMutationAt = 0;
+
+    if (!pageIsVisible || pageLanguageState !== "translated") return;
+
+    const rootsToTranslate = newNodes;
+    const rootsRemovedBeforeTranslation = removedNodes;
+    newNodes = [];
+    removedNodes = [];
+
     try {
-      newNodes.forEach((nn) => {
-        if (removedNodes.indexOf(nn) != -1) return;
+      rootsToTranslate.forEach((nn) => {
+        if (
+          rootsRemovedBeforeTranslation.indexOf(nn) != -1 ||
+          !nn ||
+          !nn.isConnected
+        ) {
+          return;
+        }
 
         let newPiecesToTranslate = getPiecesToTranslate(nn);
 
         for (const i in newPiecesToTranslate) {
-          const newNodes = newPiecesToTranslate[i].nodes;
-          let finded = false;
+          const piece = newPiecesToTranslate[i];
+          const unseenNodes = piece.nodes.filter(
+            (node) => !knownTextNodes.has(node)
+          );
+          if (unseenNodes.length === 0) continue;
+          piece.nodes = unseenNodes;
 
-          for (const ntt of piecesToTranslate) {
-            if (ntt.nodes.some((n1) => newNodes.some((n2) => n1 === n2))) {
-              finded = true;
-            }
-          }
+          rememberPiece(piece);
+          piecesToTranslate.push(piece);
+          registerTranslationSchedulerItem("piece", piece);
+        }
 
-          if (!finded) {
-            piecesToTranslate.push(newPiecesToTranslate[i]);
-          }
+        const attributeRoot = nn.nodeType === 1 ? nn : nn.parentElement;
+        if (attributeRoot) {
+          const newAttributesToTranslate = getAttributesToTranslate(attributeRoot);
+          newAttributesToTranslate.forEach((attribute) => {
+            if (isKnownAttribute(attribute)) return;
+            rememberAttribute(attribute);
+            attributesToTranslate.push(attribute);
+            registerTranslationSchedulerItem("attribute", attribute);
+          });
         }
       });
     } catch (e) {
       console.error(e);
-    } finally {
-      newNodes = [];
-      removedNodes = [];
     }
+
+    refreshTranslationPriorities();
+    requestTranslationSchedulerDrain();
   }
 
   const mutationObserver = new MutationObserver(function (mutations) {
@@ -442,13 +505,13 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((addedNode) => {
-        const nodeName = addedNode.nodeName.toLowerCase();
-        if (!isNoTranslateNode(addedNode)) {
-          if (htmlTagsInlineText.indexOf(nodeName) == -1) {
-            if (htmlTagsInlineIgnore.indexOf(nodeName) == -1) {
-              piecesToTranslate.push(addedNode);
-            }
-          }
+        let root = addedNode;
+        if (addedNode.nodeType === 3) root = addedNode.parentElement;
+        if (!root || root.nodeType !== 1 || isNoTranslateNode(root)) return;
+
+        const nodeName = root.nodeName.toLowerCase();
+        if (htmlTagsInlineIgnore.indexOf(nodeName) == -1) {
+          piecesToTranslate.push(root);
         }
       });
 
@@ -462,26 +525,32 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
         newNodes.push(ptt);
       }
     });
+
+    if (newNodes.length > 0) scheduleTranslateNewNodes();
   });
 
   function enableMutatinObserver() {
-    disableMutatinObserver();
-
-    if (twpConfig.get("translateDynamicallyCreatedContent") == "yes") {
-      translateNewNodesTimerHandler = setInterval(translateNewNodes, 2000);
+    if (
+      !mutationObserverEnabled &&
+      twpConfig.get("translateDynamicallyCreatedContent") == "yes"
+    ) {
       mutationObserver.observe(document.body, {
         childList: true,
         subtree: true,
       });
+      mutationObserverEnabled = true;
     }
   }
 
   function disableMutatinObserver() {
-    clearInterval(translateNewNodesTimerHandler);
+    clearTimeout(translateNewNodesTimerHandler);
+    translateNewNodesTimerHandler = null;
+    firstPendingMutationAt = 0;
     newNodes = [];
     removedNodes = [];
     mutationObserver.disconnect();
     mutationObserver.takeRecords();
+    mutationObserverEnabled = false;
   }
 
   let pageIsVisible = document.visibilityState == "visible";
@@ -510,8 +579,15 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       pageIsVisible = false;
     }
 
-    if (pageIsVisible && pageLanguageState === "translated") {
+    if (pageLanguageState === "translated") {
       enableMutatinObserver();
+      if (pageIsVisible) {
+        scheduleTranslateNewNodes();
+        refreshTranslationPriorities();
+        requestTranslationSchedulerDrain();
+      } else {
+        cancelBackgroundTranslationDrain();
+      }
     } else {
       disableMutatinObserver();
     }
@@ -729,16 +805,23 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   function getAttributesToTranslate(root = document.body) {
     const attributesToTranslate = [];
 
-    const placeholdersElements = root.querySelectorAll(
+    function queryIncludingRoot(selector) {
+      const elements = [];
+      if (root.nodeType === 1 && root.matches(selector)) elements.push(root);
+      elements.push(...root.querySelectorAll(selector));
+      return elements;
+    }
+
+    const placeholdersElements = queryIncludingRoot(
       "input[placeholder], textarea[placeholder]"
     );
-    const altElements = root.querySelectorAll(
+    const altElements = queryIncludingRoot(
       'area[alt], img[alt], input[type="image"][alt]'
     );
-    const valueElements = root.querySelectorAll(
+    const valueElements = queryIncludingRoot(
       'input[type="button"], input[type="submit"], input[type="reset"]'
     );
-    const titleElements = root.querySelectorAll("body [title]");
+    const titleElements = queryIncludingRoot("[title]");
 
     function hasNoTranslate(elem) {
       if (
@@ -824,6 +907,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     const fontNode = document.createElement("font");
     fontNode.setAttribute("style", "vertical-align: inherit;");
     fontNode.textContent = node.textContent;
+    if (fontNode.firstChild) knownTextNodes.add(fontNode.firstChild);
 
     node.replaceWith(fontNode);
 
@@ -964,124 +1048,588 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     }
   }
 
-  function translationRoutine() {
-    try {
-      if (piecesToTranslate && pageIsVisible) {
-        (function () {
-          if (piecesToTranslate.length < 1) return;
-          const innerHeight = window.innerHeight;
+  const translationSchedulerConfig = {
+    normalAheadViewports: 3,
+    fastAheadViewports: 6,
+    behindViewports: 1,
+    broadObserverViewports: 6,
+    fastScrollViewportsPerSecond: 1,
+    aheadCharacterBudget: 3200,
+    backgroundCharacterBudget: 1600,
+    maxUrgentRequests: 2,
+    maxAheadRequests: 2,
+    maxBackgroundRequests: 1,
+    backgroundIdleTimeoutMs: 250,
+    backgroundFallbackDelayMs: 50,
+  };
 
-          function isInScreen(element) {
-            const rect = element.getBoundingClientRect();
-            if (
-              (rect.top > 0 && rect.top <= innerHeight) ||
-              (rect.bottom > 0 && rect.bottom <= innerHeight)
-            ) {
-              return true;
-            }
-            return false;
-          }
+  const translationScheduler = {
+    active: false,
+    generation: 0,
+    nextOrder: 0,
+    queues: [new Set(), new Set(), new Set()],
+    items: new Set(),
+    nearItems: new Set(),
+    observedElements: new Set(),
+    observedElementItems: new WeakMap(),
+    observer: null,
+    inFlight: [0, 0, 0],
+    drainFrame: null,
+    scrollFrame: null,
+    backgroundDrainHandle: null,
+    backgroundDrainUsesIdleCallback: false,
+    lastScrollY: window.scrollY,
+    lastScrollAt: performance.now(),
+    scrollVelocity: 0,
+    scrollDirection: 1,
+  };
 
-          function topIsInScreen(element) {
-            if (!element) {
-              // debugger;
-              return false;
-            }
-            const rect = element.getBoundingClientRect();
-            if (rect.top > 0 && rect.top <= innerHeight) {
-              return true;
-            }
-            return false;
-          }
+  function getSchedulerItemElements(item) {
+    if (item.kind === "attribute") return [item.value.node];
 
-          function bottomIsInScreen(element) {
-            if (!element) {
-              // debugger;
-              return false;
-            }
-            const rect = element.getBoundingClientRect();
-            if (rect.bottom > 0 && rect.bottom <= innerHeight) {
-              return true;
-            }
-            return false;
-          }
-
-          const currentFooCount = fooCount;
-
-          const piecesToTranslateNow = [];
-          piecesToTranslate.forEach((ptt) => {
-            if (!ptt.isTranslated) {
-              if (
-                bottomIsInScreen(ptt.topElement) ||
-                topIsInScreen(ptt.bottomElement)
-              ) {
-                ptt.isTranslated = true;
-                piecesToTranslateNow.push(ptt);
-              }
-            }
-          });
-
-          const attributesToTranslateNow = [];
-          attributesToTranslate.forEach((ati) => {
-            if (!ati.isTranslated) {
-              if (isInScreen(ati.node)) {
-                ati.isTranslated = true;
-                attributesToTranslateNow.push(ati);
-              }
-            }
-          });
-
-          if (piecesToTranslateNow.length > 0) {
-            backgroundTranslateHTML(
-              currentPageTranslatorService,
-              currentSourceLanguage,
-              currentTargetLanguage,
-              piecesToTranslateNow.map((ptt) =>
-                ptt.nodes.map((node) =>
-                  filterKeywordsInText(
-                    node.textContent,
-                    customDictionary,
-                    currentPageTranslatorService
-                  )
-                )
-              ),
-              dontSortResults
-            ).then((results) => {
-              if (
-                pageLanguageState === "translated" &&
-                currentFooCount === fooCount
-              ) {
-                translateResults(piecesToTranslateNow, results);
-              }
-            });
-          }
-
-          if (attributesToTranslateNow.length > 0) {
-            backgroundTranslateText(
-              currentPageTranslatorService,
-              currentSourceLanguage,
-              currentTargetLanguage,
-              attributesToTranslateNow.map((ati) => ati.original)
-            ).then((results) => {
-              if (
-                pageLanguageState === "translated" &&
-                currentFooCount === fooCount
-              ) {
-                translateAttributes(attributesToTranslateNow, results);
-              }
-            });
-          }
-        })();
+    const elements = [];
+    [item.value.topElement, item.value.bottomElement].forEach((element) => {
+      if (element && element.nodeType === 1 && elements.indexOf(element) === -1) {
+        elements.push(element);
       }
-    } catch (e) {
-      console.error(e);
+    });
+    if (
+      elements.length === 0 &&
+      item.value.parentElement &&
+      item.value.parentElement.nodeType === 1
+    ) {
+      elements.push(item.value.parentElement);
     }
-
-    clearTimeout(translationRoutine_handler);
-    translationRoutine_handler = setTimeout(translationRoutine, 300);
+    return elements;
   }
 
-  translationRoutine();
+  function getSchedulerItemRect(item) {
+    const elements = getSchedulerItemElements(item).filter(
+      (element) => element && element.isConnected
+    );
+    if (elements.length === 0) return null;
+
+    const rects = elements.map((element) => element.getBoundingClientRect());
+    return {
+      top: Math.min(...rects.map((rect) => rect.top)),
+      bottom: Math.max(...rects.map((rect) => rect.bottom)),
+    };
+  }
+
+  function isSchedulerItemConnected(item) {
+    if (item.kind === "attribute") return item.value.node.isConnected;
+    return item.value.nodes.some((node) => node && node.isConnected);
+  }
+
+  function getSchedulerItemLength(item) {
+    if (item.kind === "attribute") return item.value.original.length;
+    return item.value.nodes.reduce(
+      (length, node) => length + (node.textContent || "").length,
+      0
+    );
+  }
+
+  function removeSchedulerItemFromQueues(item) {
+    translationScheduler.queues.forEach((queue) => queue.delete(item));
+  }
+
+  function setSchedulerItemPriority(item, priority) {
+    if (item.state !== "pending") return;
+    removeSchedulerItemFromQueues(item);
+    item.priority = priority;
+    translationScheduler.queues[priority].add(item);
+  }
+
+  function unobserveSchedulerItem(item) {
+    item.elements.forEach((element) => {
+      const items = translationScheduler.observedElementItems.get(element);
+      if (!items) return;
+      items.delete(item);
+      if (items.size === 0) {
+        if (translationScheduler.observer) {
+          translationScheduler.observer.unobserve(element);
+        }
+        translationScheduler.observedElements.delete(element);
+      }
+    });
+    item.intersectingElements.clear();
+    translationScheduler.nearItems.delete(item);
+  }
+
+  function finishSchedulerItem(item, state) {
+    item.state = state;
+    removeSchedulerItemFromQueues(item);
+    unobserveSchedulerItem(item);
+  }
+
+  function observeSchedulerItem(item) {
+    item.elements.forEach((element) => {
+      let items = translationScheduler.observedElementItems.get(element);
+      if (!items) {
+        items = new Set();
+        translationScheduler.observedElementItems.set(element, items);
+        translationScheduler.observedElements.add(element);
+        if (translationScheduler.observer) {
+          translationScheduler.observer.observe(element);
+        }
+      }
+      items.add(item);
+    });
+  }
+
+  function registerTranslationSchedulerItem(kind, value) {
+    if (!translationScheduler.active) return;
+
+    const item = {
+      kind,
+      value,
+      order: translationScheduler.nextOrder++,
+      priority: 2,
+      state: "pending",
+      elements: [],
+      intersectingElements: new Set(),
+    };
+    item.elements = getSchedulerItemElements(item);
+    translationScheduler.items.add(item);
+    translationScheduler.queues[2].add(item);
+    observeSchedulerItem(item);
+    classifySchedulerItem(item);
+  }
+
+  function classifySchedulerItem(item) {
+    if (item.state !== "pending") return;
+    if (!isSchedulerItemConnected(item)) {
+      finishSchedulerItem(item, "cancelled");
+      return;
+    }
+
+    const rect = getSchedulerItemRect(item);
+    if (!rect) {
+      setSchedulerItemPriority(item, 2);
+      return;
+    }
+
+    const viewportHeight = Math.max(window.innerHeight, 1);
+    const isVisible = rect.bottom >= 0 && rect.top <= viewportHeight;
+    if (isVisible) {
+      setSchedulerItemPriority(item, 0);
+      return;
+    }
+
+    const viewportsPerSecond =
+      (Math.abs(translationScheduler.scrollVelocity) * 1000) / viewportHeight;
+    const aheadViewports =
+      viewportsPerSecond >=
+      translationSchedulerConfig.fastScrollViewportsPerSecond
+        ? translationSchedulerConfig.fastAheadViewports
+        : translationSchedulerConfig.normalAheadViewports;
+    const aheadDistance = aheadViewports * viewportHeight;
+    const behindDistance =
+      translationSchedulerConfig.behindViewports * viewportHeight;
+
+    let isAhead = false;
+    let isBehind = false;
+    if (translationScheduler.scrollDirection >= 0) {
+      isAhead =
+        rect.top > viewportHeight && rect.top <= viewportHeight + aheadDistance;
+      isBehind = rect.bottom < 0 && rect.bottom >= -behindDistance;
+    } else {
+      isAhead = rect.bottom < 0 && rect.bottom >= -aheadDistance;
+      isBehind =
+        rect.top > viewportHeight && rect.top <= viewportHeight + behindDistance;
+    }
+
+    setSchedulerItemPriority(item, isAhead || isBehind ? 1 : 2);
+  }
+
+  function refreshTranslationPriorities() {
+    if (!translationScheduler.active) return;
+    translationScheduler.nearItems.forEach(classifySchedulerItem);
+  }
+
+  function rebuildTranslationIntersectionObserver() {
+    if (translationScheduler.observer) {
+      translationScheduler.observer.disconnect();
+    }
+    translationScheduler.nearItems.clear();
+    translationScheduler.items.forEach((item) =>
+      item.intersectingElements.clear()
+    );
+
+    const observerMargin =
+      translationSchedulerConfig.broadObserverViewports * window.innerHeight;
+    translationScheduler.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const items =
+            translationScheduler.observedElementItems.get(entry.target);
+          if (!items) return;
+
+          items.forEach((item) => {
+            if (item.state !== "pending") return;
+            if (entry.isIntersecting) {
+              item.intersectingElements.add(entry.target);
+            } else {
+              item.intersectingElements.delete(entry.target);
+            }
+
+            if (item.intersectingElements.size > 0) {
+              translationScheduler.nearItems.add(item);
+              classifySchedulerItem(item);
+            } else {
+              translationScheduler.nearItems.delete(item);
+              setSchedulerItemPriority(item, 2);
+            }
+          });
+        });
+        requestTranslationSchedulerDrain();
+      },
+      { root: null, rootMargin: `${observerMargin}px 0px` }
+    );
+
+    translationScheduler.observedElements.forEach((element) =>
+      translationScheduler.observer.observe(element)
+    );
+  }
+
+  function schedulerItemDistance(item) {
+    const rect = getSchedulerItemRect(item);
+    if (!rect) return Number.MAX_SAFE_INTEGER;
+    if (translationScheduler.scrollDirection >= 0) {
+      return Math.max(0, rect.top - window.innerHeight);
+    }
+    return Math.max(0, -rect.bottom);
+  }
+
+  function takeSchedulerCohort(priority, characterBudget) {
+    const queue = translationScheduler.queues[priority];
+    const candidates = [...queue].filter(
+      (item) => item.state === "pending" && item.priority === priority
+    );
+    if (priority === 1) {
+      candidates.sort(
+        (itemA, itemB) =>
+          schedulerItemDistance(itemA) - schedulerItemDistance(itemB) ||
+          itemA.order - itemB.order
+      );
+    } else {
+      candidates.sort((itemA, itemB) => itemA.order - itemB.order);
+    }
+
+    while (candidates.length > 0 && !isSchedulerItemConnected(candidates[0])) {
+      const disconnectedItem = candidates.shift();
+      finishSchedulerItem(disconnectedItem, "cancelled");
+    }
+    if (candidates.length === 0) return [];
+
+    const kind = candidates[0].kind;
+    const cohort = [];
+    let cohortLength = 0;
+    for (const item of candidates) {
+      if (item.kind !== kind || !isSchedulerItemConnected(item)) continue;
+      const itemLength = getSchedulerItemLength(item);
+      if (
+        cohort.length > 0 &&
+        Number.isFinite(characterBudget) &&
+        cohortLength + itemLength > characterBudget
+      ) {
+        break;
+      }
+      cohort.push(item);
+      cohortLength += itemLength;
+    }
+    return cohort;
+  }
+
+  function applySchedulerResults(items, results, generation) {
+    if (
+      generation !== fooCount ||
+      generation !== translationScheduler.generation ||
+      pageLanguageState !== "translated" ||
+      !Array.isArray(results)
+    ) {
+      items.forEach((item) => finishSchedulerItem(item, "cancelled"));
+      return;
+    }
+
+    items.forEach((item, index) => {
+      const result = results[index];
+      if (!isSchedulerItemConnected(item) || result == null) {
+        finishSchedulerItem(item, "cancelled");
+        return;
+      }
+
+      if (item.kind === "piece" && Array.isArray(result)) {
+        translateResults([item.value], [result]);
+      } else if (item.kind === "attribute") {
+        translateAttributes([item.value], [result]);
+      } else {
+        finishSchedulerItem(item, "cancelled");
+        return;
+      }
+      finishSchedulerItem(item, "translated");
+    });
+  }
+
+  function dispatchSchedulerCohort(items, priority) {
+    if (items.length === 0) return;
+    const generation = translationScheduler.generation;
+    items.forEach((item) => {
+      item.state = "inFlight";
+      item.value.isTranslated = true;
+      removeSchedulerItemFromQueues(item);
+    });
+    translationScheduler.inFlight[priority]++;
+
+    let request;
+    if (items[0].kind === "piece") {
+      request = backgroundTranslateHTML(
+        currentPageTranslatorService,
+        currentSourceLanguage,
+        currentTargetLanguage,
+        items.map((item) =>
+          item.value.nodes.map((node) =>
+            filterKeywordsInText(
+              node.textContent,
+              customDictionary,
+              currentPageTranslatorService
+            )
+          )
+        ),
+        dontSortResults
+      );
+    } else {
+      request = backgroundTranslateText(
+        currentPageTranslatorService,
+        currentSourceLanguage,
+        currentTargetLanguage,
+        items.map((item) => item.value.original)
+      );
+    }
+
+    Promise.resolve(request)
+      .then((results) => applySchedulerResults(items, results, generation))
+      .catch((error) => {
+        console.error(error);
+        items.forEach((item) => finishSchedulerItem(item, "cancelled"));
+      })
+      .finally(() => {
+        if (generation === translationScheduler.generation) {
+          translationScheduler.inFlight[priority] = Math.max(
+            0,
+            translationScheduler.inFlight[priority] - 1
+          );
+          requestTranslationSchedulerDrain();
+        }
+      });
+  }
+
+  function dispatchSchedulerPriority(priority, maxRequests, characterBudget) {
+    while (translationScheduler.inFlight[priority] < maxRequests) {
+      const cohort = takeSchedulerCohort(priority, characterBudget);
+      if (cohort.length === 0) return;
+      dispatchSchedulerCohort(cohort, priority);
+    }
+  }
+
+  function cancelBackgroundTranslationDrain() {
+    if (translationScheduler.backgroundDrainHandle == null) return;
+    if (
+      translationScheduler.backgroundDrainUsesIdleCallback &&
+      typeof cancelIdleCallback === "function"
+    ) {
+      cancelIdleCallback(translationScheduler.backgroundDrainHandle);
+    } else {
+      clearTimeout(translationScheduler.backgroundDrainHandle);
+    }
+    translationScheduler.backgroundDrainHandle = null;
+    translationScheduler.backgroundDrainUsesIdleCallback = false;
+  }
+
+  function scheduleBackgroundTranslationDrain() {
+    if (translationScheduler.backgroundDrainHandle != null) return;
+    const drainBackground = () => {
+      translationScheduler.backgroundDrainHandle = null;
+      translationScheduler.backgroundDrainUsesIdleCallback = false;
+      if (
+        !translationScheduler.active ||
+        !pageIsVisible ||
+        translationScheduler.queues[0].size > 0 ||
+        translationScheduler.queues[1].size > 0 ||
+        translationScheduler.inFlight[0] > 0 ||
+        translationScheduler.inFlight[1] > 0
+      ) {
+        requestTranslationSchedulerDrain();
+        return;
+      }
+      dispatchSchedulerPriority(
+        2,
+        translationSchedulerConfig.maxBackgroundRequests,
+        translationSchedulerConfig.backgroundCharacterBudget
+      );
+    };
+
+    if (typeof requestIdleCallback === "function") {
+      translationScheduler.backgroundDrainUsesIdleCallback = true;
+      translationScheduler.backgroundDrainHandle = requestIdleCallback(
+        drainBackground,
+        { timeout: translationSchedulerConfig.backgroundIdleTimeoutMs }
+      );
+    } else {
+      translationScheduler.backgroundDrainHandle = setTimeout(
+        drainBackground,
+        translationSchedulerConfig.backgroundFallbackDelayMs
+      );
+    }
+  }
+
+  function drainTranslationScheduler() {
+    translationScheduler.drainFrame = null;
+    if (
+      !translationScheduler.active ||
+      !pageIsVisible ||
+      pageLanguageState !== "translated"
+    ) {
+      cancelBackgroundTranslationDrain();
+      return;
+    }
+
+    dispatchSchedulerPriority(
+      0,
+      translationSchedulerConfig.maxUrgentRequests,
+      Number.POSITIVE_INFINITY
+    );
+    if (translationScheduler.queues[0].size > 0) {
+      cancelBackgroundTranslationDrain();
+      return;
+    }
+
+    dispatchSchedulerPriority(
+      1,
+      translationSchedulerConfig.maxAheadRequests,
+      translationSchedulerConfig.aheadCharacterBudget
+    );
+    if (translationScheduler.queues[1].size > 0) {
+      cancelBackgroundTranslationDrain();
+      return;
+    }
+
+    if (
+      translationScheduler.inFlight[0] > 0 ||
+      translationScheduler.inFlight[1] > 0
+    ) {
+      cancelBackgroundTranslationDrain();
+      return;
+    }
+
+    scheduleBackgroundTranslationDrain();
+  }
+
+  function requestTranslationSchedulerDrain() {
+    if (!translationScheduler.active || translationScheduler.drainFrame != null) {
+      return;
+    }
+    translationScheduler.drainFrame = requestAnimationFrame(
+      drainTranslationScheduler
+    );
+  }
+
+  function resetTranslationScheduler() {
+    translationScheduler.active = false;
+    if (translationScheduler.drainFrame != null) {
+      cancelAnimationFrame(translationScheduler.drainFrame);
+    }
+    if (translationScheduler.scrollFrame != null) {
+      cancelAnimationFrame(translationScheduler.scrollFrame);
+    }
+    cancelBackgroundTranslationDrain();
+    if (translationScheduler.observer) {
+      translationScheduler.observer.disconnect();
+    }
+
+    translationScheduler.queues = [new Set(), new Set(), new Set()];
+    translationScheduler.items = new Set();
+    translationScheduler.nearItems = new Set();
+    translationScheduler.observedElements = new Set();
+    translationScheduler.observedElementItems = new WeakMap();
+    translationScheduler.observer = null;
+    translationScheduler.inFlight = [0, 0, 0];
+    translationScheduler.drainFrame = null;
+    translationScheduler.scrollFrame = null;
+    translationScheduler.nextOrder = 0;
+  }
+
+  function startTranslationScheduler() {
+    resetTranslationScheduler();
+    translationScheduler.active = true;
+    translationScheduler.generation = fooCount;
+    translationScheduler.lastScrollY = window.scrollY;
+    translationScheduler.lastScrollAt = performance.now();
+    translationScheduler.scrollVelocity = 0;
+    translationScheduler.scrollDirection = 1;
+    knownTextNodes = new WeakSet();
+    knownAttributes = new WeakMap();
+
+    rebuildTranslationIntersectionObserver();
+    piecesToTranslate.forEach((piece) => {
+      rememberPiece(piece);
+      registerTranslationSchedulerItem("piece", piece);
+    });
+    attributesToTranslate.forEach((attribute) => {
+      rememberAttribute(attribute);
+      registerTranslationSchedulerItem("attribute", attribute);
+    });
+
+    const broadDistance =
+      translationSchedulerConfig.broadObserverViewports * window.innerHeight;
+    translationScheduler.items.forEach((item) => {
+      const rect = getSchedulerItemRect(item);
+      if (
+        rect &&
+        rect.bottom >= -broadDistance &&
+        rect.top <= window.innerHeight + broadDistance
+      ) {
+        translationScheduler.nearItems.add(item);
+      }
+      classifySchedulerItem(item);
+    });
+    requestTranslationSchedulerDrain();
+  }
+
+  function handleTranslationViewportChange() {
+    if (!translationScheduler.active || translationScheduler.scrollFrame != null) {
+      return;
+    }
+    translationScheduler.scrollFrame = requestAnimationFrame(() => {
+      translationScheduler.scrollFrame = null;
+      const now = performance.now();
+      const scrollY = window.scrollY;
+      const elapsed = Math.max(1, now - translationScheduler.lastScrollAt);
+      const delta = scrollY - translationScheduler.lastScrollY;
+      const instantaneousVelocity = delta / elapsed;
+      translationScheduler.scrollVelocity =
+        translationScheduler.scrollVelocity * 0.7 +
+        instantaneousVelocity * 0.3;
+      if (Math.abs(delta) > 1) {
+        translationScheduler.scrollDirection = delta > 0 ? 1 : -1;
+      }
+      translationScheduler.lastScrollY = scrollY;
+      translationScheduler.lastScrollAt = now;
+      refreshTranslationPriorities();
+      requestTranslationSchedulerDrain();
+    });
+  }
+
+  window.addEventListener("scroll", handleTranslationViewportChange, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener("resize", () => {
+    if (!translationScheduler.active) return;
+    rebuildTranslationIntersectionObserver();
+    refreshTranslationPriorities();
+    requestTranslationSchedulerDrain();
+  });
 
   function translatePageTitle() {
     const title = document.querySelector("title");
@@ -1112,8 +1660,6 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   pageTranslator.onPageLanguageStateChange = function (callback) {
     pageLanguageStateObservers.push(callback);
   };
-
-  var translationRoutine_handler = null;
 
   pageTranslator.translatePage = function (targetLanguage) {
     fooCount++;
@@ -1162,12 +1708,12 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     translatePageTitle();
 
     enableMutatinObserver();
-
-    translationRoutine();
+    startTranslationScheduler();
   };
 
   pageTranslator.restorePage = function () {
     fooCount++;
+    resetTranslationScheduler();
     piecesToTranslate = [];
 
     showOriginal.disable();

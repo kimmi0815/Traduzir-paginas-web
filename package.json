@@ -9,7 +9,9 @@
     "build": "npx gulp",
     "build:local-sourcemaps": "npx gulp --local-sourcemaps",
     "build:sign": "npx gulp --sign",
-    "polyfill": "npx webpack --entry=./polyfill.js --output-path=./src/lib --output-filename=polyfill.js -d inline-source-map"
+    "polyfill": "npx webpack --entry=./polyfill.js --output-path=./src/lib --output-filename=polyfill.js -d inline-source-map",
+    "qa:latency": "node qa/translation-latency/server.mjs",
+    "qa:latency:config": "node qa/translation-latency/create-playwright-config.mjs"
   },
   "dependencies": {
     "core-js": "^3.26.1",

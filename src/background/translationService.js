@@ -596,13 +596,17 @@ const translationService = (function () {
           currentTranslationsInProgress.push(progressInfo);
           this.translationsInProgress.set(requestHash, progressInfo);
 
-          //cast
-          const cacheEntry = await translationCache.get(
-            this.serviceName,
-            sourceLanguage,
-            targetLanguage,
-            requestString,
-          );
+          // The in-memory map above remains active regardless of this setting.
+          // Avoid hashing and opening IndexedDB when persistent caching is disabled.
+          const cacheEntry =
+            twpConfig.get("enableDiskCache") === "yes"
+              ? await translationCache.get(
+                  this.serviceName,
+                  sourceLanguage,
+                  targetLanguage,
+                  requestString,
+                )
+              : null;
           if (cacheEntry) {
             progressInfo.translatedText = cacheEntry.translatedText;
             progressInfo.detectedLanguage = cacheEntry.detectedLanguage;
