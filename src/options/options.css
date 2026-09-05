@@ -48,7 +48,7 @@ kbd {
   width: 40px;
   background-color: #fff !important;
   border-radius: 12px;
-  transition: 400ms ease all;
+  transition: none;
 }
 
 .bar2 {
@@ -56,7 +56,7 @@ kbd {
   width: 40px;
   background-color: #fff !important;
   border-radius: 12px;
-  transition: 400ms ease all;
+  transition: none;
   margin-top: 3px;
 }
 
@@ -65,7 +65,7 @@ kbd {
   width: 40px;
   background-color: #fff !important;
   border-radius: 12px;
-  transition: 400ms ease all;
+  transition: none;
   margin-top: 3px;
 }
 
@@ -74,7 +74,7 @@ kbd {
   width: 40px;
   background-color: #fff !important;
   border-radius: 12px;
-  transition: 400ms ease all;
+  transition: none;
   margin-top: -13px;
 }
 
@@ -83,7 +83,7 @@ kbd {
   width: 40px;
   background-color: #fff !important;
   border-radius: 12px;
-  transition: 400ms ease all;
+  transition: none;
   margin-top: -5px;
 }
 
@@ -231,13 +231,4 @@ select {
 /* fix https://github.com/FilipePS/Traduzir-paginas-web/issues/324 */
 #menuContainer {
   background-color: unset !important;
-}
-
-.patreonButton img {
-  box-shadow: 0 0 4px 0px black;
-  border-radius: 5px;
-}
-
-.patreonButton img:hover {
-  scale: 1.02;
 }

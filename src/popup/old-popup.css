@@ -1,201 +1,37 @@
+* { box-sizing: border-box; }
 body {
-  user-select: none;
-  /* min-width: 300px; */
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-main {
-  margin: 10px;
-}
-
-.containerRight {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-  padding: 0;
   margin: 0;
-  margin-top: 10px;
-  flex: 1;
+  width: 280px;
+  background: var(--ui-bg);
+  color: var(--ui-fg);
+  font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
-
-button {
-  min-width: 80px;
-  margin-left: 5px;
-}
-
-#btnSwitchInterfaces {
-  margin-right: 10px;
-  margin-top: 10px;
-  border-radius: 50%;
-  padding: 10px;
-  cursor: pointer;
-}
-
-#btnPatreon {
-  margin-top: 6px;
-  border-radius: 50%;
-  padding: 10px;
-  cursor: pointer;
-}
-
-#btnPatreon:hover i,
-#btnPatreon:hover i::after,
-#btnPatreon:hover i::before {
-  background-color: tomato;
-}
-
-#divOptionsList {
-  position: static;
-}
-
-#lblTranslating,
-#lblTranslated,
-#lblError,
-#btnRestore,
-#btnTryAgain {
-  display: none;
-}
-
-.arrow-down {
-  border: solid #2196f3;
-  border-width: 0 2px 2px 0;
-  display: inline-block;
-  padding: 3px;
-  transform: rotate(45deg);
-}
-
-option {
-  color: black;
-}
-
-#divIconTranslate:hover #iconTranslate {
-  opacity: 0.6;
-}
-
-#iconSwap {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  display: none;
-  opacity: 0.8;
-}
-
-#divIconTranslate:hover #iconSwap {
-  display: block;
-}
-
-#btnOptions option {
-  font-size: small;
-  font-weight: normal;
-}
-
-.pointerIgnore {
-  pointer-events: none;
-}
-
-.arrow {
-  border: solid #2196f3;
-  border-width: 0 2px 2px 0;
-  display: inline-block;
-  padding: 3px;
-}
-
-.down {
-  transform: rotate(45deg);
-}
-
-#divIconTranslate > img {
-  padding: 0;
-}
-
-.gg-swap {
-  box-sizing: border-box;
-  position: relative;
-  display: block;
-  transform: scale(var(--ggs, 1));
-  box-shadow: -2px 2px 0, 2px -2px 0;
-  width: 6px;
-  height: 2px;
-}
-
-.gg-swap::after,
-.gg-swap::before {
-  content: "";
-  display: block;
-  box-sizing: border-box;
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-top: 3px solid transparent;
-  border-bottom: 3px solid transparent;
-}
-
-.gg-swap::before {
-  border-left: 3px solid;
-  top: -4px;
-  right: -4px;
-}
-
-.gg-swap::after {
-  border-right: 3px solid;
-  bottom: -4px;
-  left: -4px;
-}
-
-.gg-heart,
-.gg-heart::after {
-  border: 2px solid;
-  border-top-left-radius: 100px;
-  border-top-right-radius: 100px;
-  width: 10px;
-  height: 8px;
-  border-bottom: 0;
-}
-.gg-heart {
-  box-sizing: border-box;
-  position: relative;
-  transform: translate(
-      calc(-10px / 2 * var(--ggs, 1)),
-      calc(-6px / 2 * var(--ggs, 1))
-    )
-    rotate(-45deg) scale(var(--ggs, 1));
-  display: block;
-}
-.gg-heart::after,
-.gg-heart::before {
-  content: "";
-  display: block;
-  box-sizing: border-box;
-  position: absolute;
-}
-.gg-heart::after {
-  right: -9px;
-  transform: rotate(90deg);
-  top: 5px;
-}
-.gg-heart::before {
-  width: 11px;
-  height: 11px;
-  border-left: 2px solid;
-  border-bottom: 2px solid;
-  left: -2px;
-  top: 3px;
-}
-
-#btnImproveTranslation {
-  width: 100%;
-  cursor: pointer;
-  background-color: white;
-  border: 1px solid lightblue;
-  border-radius: 10px;
-}
-
-#btnImproveTranslation:hover {
-  scale: 1.03;
-  box-shadow: 0 0 3px -2px black;
-}
+button { border: 0; background: none; color: inherit; }
+.toolbar { display: flex; align-items: center; padding: 8px 8px 0 12px; }
+.language-tabs { display: flex; flex: 1; min-width: 0; border-bottom: 1px solid var(--ui-line); }
+.language-tab { flex: 1; min-width: 0; min-height: 36px; padding: 6px 6px 8px; font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; overflow-wrap: anywhere; }
+.language-tab[aria-selected="true"] { color: var(--ui-accent); border-bottom-color: var(--ui-accent); }
+.language-tab:hover, .icon-button:hover { background: var(--ui-soft); }
+.language-tab:focus-visible { outline-offset: -3px; }
+.icon-button { width: 32px; height: 32px; padding: 8px; flex: 0 0 32px; border-radius: 50%; color: var(--ui-muted); align-self: flex-start; }
+.icon-button svg { width: 16px; height: 16px; fill: currentColor; }
+button:disabled { opacity: .5; cursor: default; }
+footer { margin-top: 8px; min-height: 40px; border-top: 1px solid var(--ui-line); background: var(--ui-soft); padding: 8px 18px; color: var(--ui-muted); font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#serviceName { white-space: nowrap; }
+#btnService { font-size: 11px; text-align: end; }
+.status-region { padding: 12px 22px 0; color: var(--ui-muted); }
+body[data-state="error"] .status-region { color: var(--ui-danger); }
+.text-button { min-height: 36px; color: var(--ui-accent); border-radius: 6px; padding: 6px 8px; }
+.text-button:hover { background: var(--ui-selected); }
+.popup-menu { border-top: 1px solid var(--ui-line); margin-top: 12px; padding: 6px 0; max-height: 410px; overflow-y: auto; }
+.popup-menu button, .menu-check { display: flex; align-items: center; width: 100%; min-height: 40px; text-align: start; padding: 9px 22px; font-size: 12px; line-height: 1.5; }
+.popup-menu button:hover, .menu-check:hover { background: var(--ui-soft); }
+.popup-menu button:focus-visible, .menu-check:focus-within { outline-offset: -3px; }
+.menu-check { gap: 10px; cursor: pointer; }
+.menu-check input { accent-color: var(--ui-accent); width: 16px; height: 16px; flex: 0 0 16px; margin: 0; }
+.menu-secondary { border-top: 1px solid var(--ui-line); margin-top: 6px; padding-top: 6px; }
+.language-picker { padding: 16px 22px 4px; }
+.language-picker label { display: block; margin-bottom: 8px; color: var(--ui-muted); }
+.language-picker select { width: 100%; min-height: 40px; background: var(--ui-bg); color: var(--ui-fg); border: 1px solid var(--ui-line); border-radius: 6px; padding: 6px 10px; }
+.picker-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.filled-button { background: var(--ui-accent); color: var(--ui-bg); min-height: 36px; border-radius: 6px; padding: 6px 16px; }

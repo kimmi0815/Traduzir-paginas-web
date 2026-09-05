@@ -1,6 +1,14 @@
 
 # <img src="https://github.com/FilipePS/Traduzir-paginas-web/blob/master/src/icons/icon-128.png" height="50"> Translate Web Pages
 
+## TWP Fast — personal fork
+
+This fork develops Chrome-like translation speed and a compact native-style interface for Aside and other Chromium browsers. Current development is on **[`chrome-mv3`](https://github.com/kimmi0815/Traduzir-paginas-web/tree/chrome-mv3)**.
+
+**[別のPCで開発を再開する / Setup and current status](WORKING_NOTES.md)** · [UI preview and checks](qa/ui-design/README.md) · [Translation latency QA](qa/translation-latency/README.md)
+
+The upstream documentation follows. Its store links and release badges refer to the original TWP, not this fork's local build.
+
 Translate your page in real time using Google, Bing or Yandex.
 
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/FilipePS/Traduzir-paginas-web?label=latest%20version&sort=semver)](https://github.com/FilipePS/Traduzir-paginas-web/releases)

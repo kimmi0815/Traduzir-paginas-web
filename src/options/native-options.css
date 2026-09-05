@@ -1,0 +1,160 @@
+/* Native styling layered over upstream W3 layouts; existing settings and IDs are preserved. */
+body.native-options {
+  margin: 0;
+  max-width: none;
+  background: var(--ui-canvas);
+  color: var(--ui-fg);
+  font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.native-options h1, .native-options h2, .native-options h3 { font-family: inherit; color: var(--ui-fg); }
+.native-options #sideBar { width: 232px !important; background: var(--ui-canvas); padding: 32px 16px; }
+.native-options .settings-brand { font-size: 22px; font-weight: 600; letter-spacing: -.5px; margin: 0; }
+.settings-brand span { display: block; margin-top: 4px; color: var(--ui-muted); font-size: 12px; font-weight: 400; letter-spacing: 0; }
+.native-options #sideBar > .w3-container { padding: 0 12px 24px !important; }
+.native-options #sideBar > .w3-padding-64 { padding: 12px 0 24px !important; font-size: 14px !important; font-weight: 400 !important; }
+.native-options #sideBar a { border-radius: 8px; color: var(--ui-muted); min-height: 40px; padding: 9px 14px !important; line-height: 1.5; margin: 2px 0; font-size: 12px; }
+.native-options #sideBar > .w3-padding-64 a { font-size: 14px; }
+.native-options #sideBar a:hover { background: var(--ui-soft) !important; color: var(--ui-fg) !important; }
+.native-options #sideBar a[aria-current="page"] { color: var(--ui-accent) !important; background: var(--ui-selected) !important; font-weight: 500; }
+.native-options .w3-main { margin-left: 232px !important; max-width: 1056px; padding: 34px 48px 72px; }
+.native-options .w3-main > header { padding: 0; }
+.native-options #itemSelectedName { font-size: 28px; letter-spacing: -.5px; font-weight: 500; margin: 0 0 28px; line-height: 1.25; }
+.native-options .w3-main > div > .w3-container { padding: 0; }
+.native-options b { font-weight: 500; }
+.native-options p { margin: 20px 0 10px; }
+.native-options .settings-card { background: var(--ui-bg); border: 0; border-radius: 14px; overflow: hidden; box-shadow: var(--settings-surface-shadow); }
+.native-options .setting-row { display: flex; gap: 24px; align-items: center; justify-content: space-between; padding: 16px 22px; min-height: 76px; }
+.native-options .setting-row + .setting-row { border-top: 1px solid var(--ui-line); }
+.setting-row > label { flex: 1; min-width: 0; }
+.setting-control { display: flex; align-items: center; gap: 10px; width: 42%; flex: 0 0 42%; }
+.native-options .setting-control select { width: 100% !important; min-width: 0; margin: 0 !important; }
+.native-options .setting-control button { margin: 0 !important; flex-shrink: 0; }
+.native-options select, .native-options input:not([type="checkbox"]):not([type="range"]):not([type="image"]):not([type="hidden"]), .native-options textarea {
+  border: 1px solid var(--ui-line) !important;
+  border-radius: 7px;
+  background: var(--ui-bg);
+  color: var(--ui-fg);
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.native-options option { background: var(--ui-bg); color: var(--ui-fg); }
+.native-options select.w3-margin { width: calc(100% - 32px); }
+.native-options input[type="checkbox"] { accent-color: var(--ui-accent); width: 17px; height: 17px; vertical-align: middle; margin-right: 6px; }
+.native-options input[type="range"] { accent-color: var(--ui-accent); }
+.native-options .w3-button, .native-options .w3-btn { box-shadow: none; min-height: 40px; border-radius: 7px; font-weight: 500; }
+.native-options .w3-blue { background: var(--ui-selected) !important; color: var(--ui-accent) !important; }
+.native-options .w3-button:hover, .native-options .w3-btn:hover { background: var(--ui-soft) !important; color: var(--ui-fg) !important; }
+.native-options .w3-blue:hover { background: var(--ui-accent) !important; color: var(--ui-bg) !important; }
+.native-options .w3-ul li { border-color: var(--ui-line); }
+.native-options .favorites-card li { display: flex; align-items: center; gap: 24px; padding: 16px 22px; }
+.native-options .favorites-card p { margin: 0; flex: 1; }
+.native-options .favorites-card select { width: 42%; }
+.native-options #languages > p { margin: 30px 0 12px; }
+.native-options .list { box-shadow: none; border: 1px solid var(--ui-line); border-radius: 10px; background: var(--ui-bg); margin: 10px 0 24px !important; }
+.native-options .list:empty { display: none; }
+.native-options .list li { min-height: 48px; padding: 12px 16px; }
+.native-options .w3-main .w3-display-container { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0 !important; }
+.native-options .w3-main .w3-display-container > .w3-display-left,
+.native-options .w3-main .w3-display-container > .w3-display-right { position: static; transform: none; }
+.native-options .w3-display-left { flex: 1; min-width: 0; }
+.native-options .w3-display-right { flex-shrink: 0; }
+.native-options .w3-display-container p { margin: 0; }
+.native-options .add { width: 72px; height: 40px; margin: 0 !important; }
+.native-options .w3-main hr { border-color: var(--ui-line); }
+.native-options .w3-main a { color: var(--ui-accent); }
+.native-options #header { background: var(--ui-bg) !important; color: var(--ui-fg) !important; border-bottom: 1px solid var(--ui-line); }
+.native-options #header .bar1, .native-options #header .bar2, .native-options #header .bar3,
+.native-options #header .bar4, .native-options #header .bar5 { background: var(--ui-fg) !important; width: 22px; height: 2px; transition: none; }
+.native-options #header .bar2, .native-options #header .bar3 { margin-top: 5px; }
+.native-options #header .bar4 { margin-top: -9px; }
+.native-options #header .bar5 { margin-top: -2px; }
+.native-options #header #btnOpenMenu { padding: 18px !important; }
+.native-options kbd { background: var(--ui-soft); color: var(--ui-fg); border-color: var(--ui-line); box-shadow: none; }
+.native-options output { font-variant-numeric: tabular-nums; }
+@media (max-width: 1200px) { .native-options .w3-main { padding: 32px 28px 60px; } }
+@media (max-width: 992px) {
+  .native-options .w3-main { margin-left: 0 !important; padding: 0 24px 48px; }
+  .native-options #sideBar { top: 57px; bottom: 0; height: auto; background: var(--ui-bg); box-shadow: 8px 0 24px #0002; }
+}
+@media (max-width: 620px) {
+  .native-options .w3-main { padding: 0 16px 32px; }
+  .native-options .setting-row { align-items: stretch; flex-direction: column; gap: 10px; padding: 16px; }
+  .setting-control { width: 100%; flex-basis: auto; }
+  .native-options .favorites-card li { padding: 16px; gap: 10px; }
+  .native-options .favorites-card select { width: 50%; }
+  .native-options .shortcut-row { flex-wrap: wrap; gap: 12px; }
+  .native-options .w3-main > div > .w3-container { overflow-wrap: anywhere; }
+}
+.native-options .w3-main { transition: none; }
+.native-options .preference-row { background: var(--ui-bg); border: 0; border-radius: 14px; margin: 12px 0; box-shadow: var(--settings-surface-shadow); }
+.native-options .preference-row + br { display: none; }
+.native-options .favorites-card li::before, .native-options .favorites-card li::after { display: none; }
+.native-options .favorites-card label { flex: 1; }
+
+/* Settings-only polish; popup theme values and surfaces are unchanged. */
+.native-options {
+  --settings-surface-shadow: 0 0 0 1px #0000000a, 0 1px 2px #00000004, 0 3px 8px #00000003;
+  --settings-divider: #0000000d;
+}
+[data-theme="dark"] .native-options {
+  --settings-surface-shadow: 0 0 0 1px #ffffff12;
+  --settings-divider: #ffffff12;
+}
+.native-options h1, .native-options h2 { text-wrap: balance; }
+.native-options p, .native-options label { text-wrap: pretty; }
+.native-options .settings-eyebrow { color: var(--ui-muted); font-size: 12px; margin: 0 0 10px; }
+.native-options #sideBar a { display: flex; align-items: center; gap: 12px; }
+.native-options #sideBar svg { width: 19px; height: 19px; flex: 0 0 19px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.native-options .setting-row + .setting-row, .native-options .w3-ul li { border-color: var(--settings-divider); }
+.native-options .settings-section-title, .native-options #languages > p { font-size: 13px; font-weight: 500; color: var(--ui-muted); margin: 28px 0 12px; }
+.native-options .preference-group { background: var(--ui-bg); border-radius: 14px; box-shadow: var(--settings-surface-shadow); overflow: hidden; margin: 0 0 24px; }
+.native-options .preference-group .preference-row { box-shadow: none; border-radius: 0; margin: 0; }
+.native-options .preference-group .preference-row ~ .preference-row { border-top: 1px solid var(--settings-divider); }
+.native-options .toggle-row .setting-control { width: auto; flex: 0 0 auto; }
+.native-options .settings-switch { display: flex; align-items: center; justify-content: flex-end; width: 52px; height: 44px; padding: 0; border: 0; background: none !important; color: var(--ui-accent); border-radius: 7px; cursor: pointer; }
+.native-options .switch-track { width: 34px; height: 20px; display: block; background: var(--ui-muted); border-radius: 20px; position: relative; }
+.native-options .switch-thumb { position: absolute; width: 16px; height: 16px; top: 2px; left: 2px; border-radius: 50%; background: var(--ui-bg); }
+.native-options .settings-switch[aria-checked="true"] .switch-track { background: var(--ui-accent); }
+.native-options .settings-switch[aria-checked="true"] .switch-thumb { left: 16px; }
+.native-options .settings-switch:disabled { opacity: .45; cursor: default; }
+.native-options .settings-switch:hover .switch-track { outline: 4px solid var(--ui-soft); }
+.native-options .rule-card { background: var(--ui-bg); border-radius: 14px; box-shadow: var(--settings-surface-shadow); margin: 12px 0; padding: 0 22px; }
+.native-options .rule-card > .w3-display-container { min-height: 68px; margin-top: 0 !important; padding: 12px 0 !important; }
+.native-options .rule-card .list { border: 0; border-top: 1px solid var(--settings-divider); border-radius: 0; box-shadow: none; margin: 0 !important; max-height: 250px; }
+.native-options .rule-card .list li { min-height: 52px; gap: 12px; padding: 6px 0 !important; overflow-wrap: anywhere; }
+.native-options .empty-rules { display: none; font-size: 12px; color: var(--ui-muted); margin: 0; padding: 0 0 16px; }
+.native-options .list:empty + .empty-rules { display: block; }
+.native-options .rule-card .add { width: 64px; }
+.native-options .rule-card .w3-display-right:focus-within { outline: 2px solid var(--ui-accent); outline-offset: 3px; border-radius: 7px; }
+.native-options #languages > br, .native-options #languages > div > br, .native-options #sites > br, .native-options #sites > div > br { display: none; }
+.native-options .checkbox-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.native-options .checkbox-row label { display: flex; align-items: center; flex: 1; min-height: 44px; padding: 8px 0; cursor: pointer; font-size: 13px; }
+.native-options .checkbox-row input { flex: 0 0 17px; margin: 0; }
+.native-options .checkbox-row:has(input:disabled) { opacity: .5; }
+.native-options .checkbox-row:has(input:disabled) label { cursor: default; }
+.native-options button { min-height: 40px; border-radius: 7px; }
+.native-options button:not([class]) { background: var(--ui-selected); color: var(--ui-accent); padding: 8px 14px; border: 0; }
+.native-options .list button { flex: 0 0 40px; width: 40px; height: 40px; min-height: 40px; padding: 0; font-size: 20px; color: var(--ui-muted); }
+.native-options button:active:not(.settings-switch), .native-options .w3-btn:active { transform: scale(.96); }
+.native-options .settings-switch:active .switch-track { transform: scale(.96); }
+.native-options #storageUsed, .native-options output { font-variant-numeric: tabular-nums; }
+.native-options #experimental h3 { font-size: 17px; line-height: 1.5; }
+.native-options #experimental h4 { font-size: 14px; }
+.native-options #experimental > div { background: var(--ui-bg); border-radius: 14px; box-shadow: var(--settings-surface-shadow); padding: 20px 22px; margin: 16px 0; }
+.native-options #experimental > hr { display: none; }
+.native-options #experimental input[type="text"] { max-width: 100%; width: 100% !important; }
+.native-options .w3-light-grey:not(a), .native-options .w3-grey { background: var(--ui-soft) !important; color: var(--ui-fg) !important; }
+.native-options #resetToDefault, .native-options #deleteTranslationCache { color: var(--ui-danger) !important; }
+.native-options .range-control input { width: 100%; min-width: 0; height: 40px; margin: 0; }
+.native-options .range-control output { flex: 0 0 3ch; text-align: right; }
+.native-options #privacy label:has(> input), .native-options #hotkeys label:has(> input) { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.native-options #privacy label:has(> input) + br { display: none; }
+.native-options #storage > .w3-container { background: var(--ui-bg); box-shadow: var(--settings-surface-shadow); border-radius: 14px; padding: 20px 22px; margin-top: 12px; }
+.native-options #storage .preference-row { box-shadow: none; padding-left: 0; padding-right: 0; }
+@media (max-width: 620px) {
+  .native-options .toggle-row { flex-direction: row; align-items: center; gap: 16px; }
+  .native-options .rule-card { padding: 0 16px; }
+  .native-options #sideBar a, .native-options button, .native-options select { min-height: 44px; }
+  .native-options .rule-card .list button { width: 44px; height: 44px; flex-basis: 44px; }
+}

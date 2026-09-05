@@ -1,4 +1,28 @@
 {
+  "settingsNone": {
+    "message": "No rules added"
+  },
+  "settingsRemove": {
+    "message": "Remove"
+  },
+  "settingsRules": {
+    "message": "Automatic translation"
+  },
+  "nativeDetectedLanguage": {
+    "message": "Detected language"
+  },
+  "nativeClose": {
+    "message": "Close"
+  },
+  "nativeCancel": {
+    "message": "Cancel"
+  },
+  "nativeDetailedInterface": {
+    "message": "Detailed interface"
+  },
+  "nativeUnavailable": {
+    "message": "This page cannot be translated. Open a web page and try again."
+  },
   "extensionDescription": {
     "message": "Translate your page in real time using Google or Yandex."
   },

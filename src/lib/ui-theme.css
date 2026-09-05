@@ -1,0 +1,39 @@
+/* Shared native surfaces. No remote fonts or runtime UI dependencies. */
+:root {
+  color-scheme: light;
+  --ui-bg: #ffffff;
+  --ui-canvas: #f8f9fa;
+  --ui-fg: #202124;
+  --ui-muted: #5f6368;
+  --ui-line: #dadce0;
+  --ui-soft: #f1f3f4;
+  --ui-accent: #1967d2;
+  --ui-selected: #e8f0fe;
+  --ui-danger: #b3261e;
+  --ui-shadow: 0 2px 8px #20212412;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ui-bg: #292a2d;
+  --ui-canvas: #202124;
+  --ui-fg: #e8eaed;
+  --ui-muted: #bdc1c6;
+  --ui-line: #45474b;
+  --ui-soft: #35363a;
+  --ui-accent: #aecbfa;
+  --ui-selected: #394457;
+  --ui-danger: #f2b8b5;
+  --ui-shadow: 0 2px 8px #00000020;
+}
+body { -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; }
+button, select, input[type="checkbox"], summary { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

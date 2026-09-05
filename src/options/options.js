@@ -1,74 +1,5 @@
 "use strict";
 
-setTimeout(() => {
-  fetch("./release-notes/en.html")
-    .then((response) => response.text())
-    .then((responseText) => {
-      window.scrollTo(0, 0);
-      document.getElementById("release_notes").innerHTML = responseText;
-      document.getElementById("_msgHasBeenUpdated").textContent =
-        twpI18n.getMessage("msgHasBeenUpdated");
-      document.getElementById("_msgHasBeenUpdated").innerHTML = document
-        .getElementById("_msgHasBeenUpdated")
-        .textContent.replace(
-          "#EXTENSION_NAME#",
-          "<b>" + chrome.runtime.getManifest().name + "</b>"
-        )
-        .replace(
-          "#EXTENSION_VERSION#",
-          "<b>" + chrome.runtime.getManifest().version + "</b>"
-        );
-      document.getElementById("_donationText").textContent =
-        twpI18n.getMessage("donationText");
-      document.getElementById("_donatewithpaypal").textContent =
-        twpI18n.getMessage("donatewithpaypal");
-
-      document.getElementById("_donationRecipient").textContent =
-        twpI18n.getMessage("msgDonationRecipient");
-      document.getElementById("_donationRecipient").innerHTML = document
-        .getElementById("_donationRecipient")
-        .textContent.replace(
-          "#EXTENSION_NAME#",
-          "<b>" + chrome.runtime.getManifest().name + "</b>"
-        );
-
-      // donation options
-      if (navigator.language === "pt-BR") {
-        $("#_currency").value = "BRL";
-        $("#_donateInUSD").style.display = "none";
-        $("#_donateInEUR").style.display = "none";
-        $("#_donateInBRL").style.display = "block";
-      } else {
-        $("#_currency").value = "USD";
-        $("#_donateInUSD").style.display = "block";
-        $("#_donateInEUR").style.display = "none";
-        $("#_donateInBRL").style.display = "none";
-      }
-
-      $("#_currency").onchange = (e) => {
-        if (e.target.value === "BRL") {
-          $("#_donateInUSD").style.display = "none";
-          $("#_donateInEUR").style.display = "none";
-          $("#_donateInBRL").style.display = "block";
-        } else if (e.target.value === "EUR") {
-          $("#_donateInUSD").style.display = "none";
-          $("#_donateInEUR").style.display = "block";
-          $("#_donateInBRL").style.display = "none";
-        } else {
-          $("#_donateInUSD").style.display = "block";
-          $("#_donateInEUR").style.display = "none";
-          $("#_donateInBRL").style.display = "none";
-        }
-      };
-
-      const donationOverflow = document.getElementById("donationOverflow");
-      setTimeout(() => {
-        donationOverflow.style.display = "none";
-      }, 1000);
-      donationOverflow.style.display = "block";
-    });
-}, 800);
-
 var $ = document.querySelector.bind(document);
 
 twpConfig
@@ -117,10 +48,13 @@ twpConfig
         $("#sideBar").style.display = "block";
         sideBarIsVisible = true;
       }
+      $("#btnOpenMenu").setAttribute("aria-expanded", String(sideBarIsVisible));
     };
 
     function hashchange() {
-      const hash = location.hash || "#languages";
+      const requestedHash = location.hash || "#languages";
+      const knownPages = ["#languages", "#sites", "#translations", "#style", "#hotkeys", "#privacy", "#storage", "#others", "#experimental"];
+      const hash = knownPages.includes(requestedHash) ? requestedHash : "#languages";
       const divs = [
         $("#languages"),
         $("#sites"),
@@ -131,8 +65,6 @@ twpConfig
         $("#storage"),
         $("#others"),
         $("#experimental"),
-        $("#donation"),
-        $("#release_notes"),
       ];
       divs.forEach((element) => {
         element.style.display = "none";
@@ -140,31 +72,21 @@ twpConfig
 
       document.querySelectorAll("nav a").forEach((a) => {
         a.classList.remove("w3-light-grey");
+        a.removeAttribute("aria-current");
       });
 
       $(hash).style.display = "block";
-      $('a[href="' + hash + '"]').classList.add("w3-light-grey");
+      const activeLink = $('a[href="' + hash + '"]');
+      activeLink.classList.add("w3-light-grey");
+      activeLink.setAttribute("aria-current", "page");
 
-      let text;
-      if (hash === "#donation") {
-        text = twpI18n.getMessage("lblMakeDonation");
-      } else if (hash === "#release_notes") {
-        text = twpI18n.getMessage("lblReleaseNotes");
-      } else {
-        text = twpI18n.getMessage("lblSettings");
-      }
-      $("#itemSelectedName").textContent = text;
+      $("#itemSelectedName").textContent = activeLink.textContent;
 
       if (sideBarIsVisible) {
         $("#menuContainer").classList.toggle("change");
         $("#sideBar").style.display = "none";
         sideBarIsVisible = false;
-      }
-
-      if (hash === "#release_notes") {
-        $("#btnPatreon").style.display = "none";
-      } else {
-        $("#btnPatreon").style.display = "block";
+        $("#btnOpenMenu").setAttribute("aria-expanded", "false");
       }
 
       if (hash === "#translations") {
@@ -234,6 +156,7 @@ twpConfig
       }
     }
     updateDarkMode();
+    matchMedia("(prefers-color-scheme: dark)").addListener(updateDarkMode);
 
     // target languages
     $("#selectUiLanguage").value =
@@ -350,7 +273,9 @@ twpConfig
       li.value = langCode;
       li.textContent = langName;
 
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
@@ -358,7 +283,7 @@ twpConfig
         e.preventDefault();
 
         twpConfig.removeLangFromNeverTranslate(langCode);
-        li.remove();
+        removeSettingsRule(li);
       };
 
       li.appendChild(close);
@@ -391,7 +316,9 @@ twpConfig
       li.value = langCode;
       li.textContent = langName;
 
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
@@ -399,7 +326,7 @@ twpConfig
         e.preventDefault();
 
         twpConfig.removeLangFromAlwaysTranslate(langCode);
-        li.remove();
+        removeSettingsRule(li);
       };
 
       li.appendChild(close);
@@ -432,7 +359,9 @@ twpConfig
       li.value = langCode;
       li.textContent = langName;
 
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
@@ -440,7 +369,7 @@ twpConfig
         e.preventDefault();
 
         twpConfig.removeLangFromTranslateWhenHovering(langCode);
-        li.remove();
+        removeSettingsRule(li);
       };
 
       li.appendChild(close);
@@ -481,7 +410,9 @@ twpConfig
       li.value = hostname;
       li.textContent = hostname;
 
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
@@ -489,7 +420,7 @@ twpConfig
         e.preventDefault();
 
         twpConfig.removeSiteFromAlwaysTranslate(hostname);
-        li.remove();
+        removeSettingsRule(li);
       };
 
       li.appendChild(close);
@@ -522,7 +453,9 @@ twpConfig
       li.value = hostname;
       li.textContent = hostname;
 
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
@@ -530,7 +463,7 @@ twpConfig
         e.preventDefault();
 
         twpConfig.removeSiteFromNeverTranslate(hostname);
-        li.remove();
+        removeSettingsRule(li);
       };
 
       li.appendChild(close);
@@ -564,14 +497,16 @@ twpConfig
       } else {
         li.textContent = keyWord;
       }
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
       close.onclick = (e) => {
         e.preventDefault();
         twpConfig.removeKeyWordFromcustomDictionary(keyWord);
-        li.remove();
+        removeSettingsRule(li);
       };
       li.appendChild(close);
       return li;
@@ -611,7 +546,9 @@ twpConfig
       li.value = hostname;
       li.textContent = hostname;
 
-      const close = document.createElement("span");
+      const close = document.createElement("button");
+      close.type = "button";
+      close.setAttribute("aria-label", twpI18n.getMessage("settingsRemove") + ": " + li.textContent);
       close.setAttribute("class", "w3-button w3-transparent w3-display-right");
       close.innerHTML = "&times;";
 
@@ -619,7 +556,7 @@ twpConfig
         e.preventDefault();
 
         twpConfig.removeSiteFromTranslateWhenHovering(hostname);
-        li.remove();
+        removeSettingsRule(li);
       };
 
       li.appendChild(close);
@@ -1286,10 +1223,6 @@ twpConfig
     };
 
     // others options
-    $("#showReleaseNotes").onchange = (e) => {
-      twpConfig.set("showReleaseNotes", e.target.value);
-    };
-    $("#showReleaseNotes").value = twpConfig.get("showReleaseNotes");
 
     $("#whenShowMobilePopup").onchange = (e) => {
       twpConfig.set("whenShowMobilePopup", e.target.value);
@@ -1535,34 +1468,8 @@ twpConfig
       $("#googleTtsProxyServer").value = googleProxy.ttsServer;
     }
 
-    // donation options
-    if (navigator.language === "pt-BR") {
-      $("#currency").value = "BRL";
-      $("#donateInUSD").style.display = "none";
-      $("#donateInEUR").style.display = "none";
-      $("#donateInBRL").style.display = "block";
-    } else {
-      $("#currency").value = "USD";
-      $("#donateInUSD").style.display = "block";
-      $("#donateInEUR").style.display = "none";
-      $("#donateInBRL").style.display = "none";
-    }
+    initializeSettingsUI();
 
-    $("#currency").onchange = (e) => {
-      if (e.target.value === "BRL") {
-        $("#donateInUSD").style.display = "none";
-        $("#donateInEUR").style.display = "none";
-        $("#donateInBRL").style.display = "block";
-      } else if (e.target.value === "EUR") {
-        $("#donateInUSD").style.display = "none";
-        $("#donateInEUR").style.display = "block";
-        $("#donateInBRL").style.display = "none";
-      } else {
-        $("#donateInUSD").style.display = "block";
-        $("#donateInEUR").style.display = "none";
-        $("#donateInBRL").style.display = "none";
-      }
-    };
   });
 
 window.scrollTo({

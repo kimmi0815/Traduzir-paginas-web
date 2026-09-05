@@ -1,4 +1,28 @@
 {
+  "settingsNone": {
+    "message": "まだ追加されていません"
+  },
+  "settingsRemove": {
+    "message": "削除"
+  },
+  "settingsRules": {
+    "message": "自動翻訳のルール"
+  },
+  "nativeDetectedLanguage": {
+    "message": "検出された言語"
+  },
+  "nativeClose": {
+    "message": "閉じる"
+  },
+  "nativeCancel": {
+    "message": "キャンセル"
+  },
+  "nativeDetailedInterface": {
+    "message": "詳細なインターフェース"
+  },
+  "nativeUnavailable": {
+    "message": "このページは翻訳できません。ウェブページを開いてお試しください。"
+  },
   "extensionDescription": {
     "message": "GoogleやYandexを使ってリアルタイムでページを翻訳します。"
   },

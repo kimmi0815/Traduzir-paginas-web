@@ -6,38 +6,33 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/w3css/4/w3.css" />
+  <link rel="stylesheet" href="/lib/ui-theme.css" />
   <link rel="stylesheet" href="options.css" />
+  <link rel="stylesheet" href="native-options.css" />
   <script src="darkmode.js"></script>
 </head>
 
-<body class="w3-content" style="max-width: 1200px">
+<body class="native-options">
   <nav class="w3-sidebar w3-bar-block w3-collapse w3-top" style="z-index: 3; width: 300px" id="sideBar">
     <div class="w3-container w3-display-container w3-padding-16">
-      <h3 class="w3-wide"><b>TWP - Translate Web Pages</b></h3>
+      <div class="settings-brand">TWP <span>Translate Web Pages</span></div>
     </div>
     <div class="w3-padding-64 w3-large w3-text-grey" style="font-weight: bold">
-      <a href="#languages" class="w3-bar-item w3-button" data-i18n="msgLanguages">Languages</a>
-      <a href="#sites" class="w3-bar-item w3-button" data-i18n="msgSites">Sites</a>
-      <a href="#translations" class="w3-bar-item w3-button" data-i18n="msgTranslations">Translations</a>
-      <a href="#style" class="w3-bar-item w3-button" data-i18n="msgStyle">Style</a>
-      <a href="#hotkeys" class="w3-bar-item w3-button desktopOnly" data-i18n="msgHotkeys">Hotkeys</a>
-      <a href="#privacy" class="w3-bar-item w3-button" data-i18n="msgPrivacy">Privacy</a>
-      <a href="#storage" class="w3-bar-item w3-button" data-i18n="msgStorage">Storage</a>
-      <a href="#others" class="w3-bar-item w3-button" data-i18n="lblOthers">Others</a>
-      <a href="#experimental" class="w3-bar-item w3-button" data-i18n="lblExperimental">Experimental</a>
+      <a href="#languages" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h11M8 2v3M5 5c1 5 4 8 8 10M12 5c-1 5-4 8-9 11M13 21l4-11 4 11M14.5 17h5"/></svg><span data-i18n="msgLanguages">Languages</span></a>
+      <a href="#sites" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18Z"/></svg><span data-i18n="msgSites">Sites</span></a>
+      <a href="#translations" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h14l-3-3M20 18H6l3 3M18 6l-3 3M6 18l3-3"/></svg><span data-i18n="msgTranslations">Translations</span></a>
+      <a href="#style" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c-6 3-12-3-9-9Z"/></svg><span data-i18n="msgStyle">Style</span></a>
+      <a href="#hotkeys" class="w3-bar-item w3-button desktopOnly"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"/></svg><span data-i18n="msgHotkeys">Hotkeys</span></a>
+      <a href="#privacy" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg><span data-i18n="msgPrivacy">Privacy</span></a>
+      <a href="#storage" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/></svg><span data-i18n="msgStorage">Storage</span></a>
+      <a href="#others" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg><span data-i18n="lblOthers">Others</span></a>
+      <a href="#experimental" class="w3-bar-item w3-button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6M10 3v6l-6 10a1.3 1.3 0 0 0 1 2h14a1.3 1.3 0 0 0 1-2L14 9V3M7 15h10"/></svg><span data-i18n="lblExperimental">Experimental</span></a>
     </div>
-    <b><a href="#donation" class="w3-bar-item w3-button w3-padding"><span data-i18n="lblMakeDonation">Make a
-          donation</span> &#10084;</a></b>
-    <a href="#release_notes" class="w3-bar-item w3-button w3-padding" data-i18n="lblReleaseNotes">Release Notes</a>
-    <a href="https://github.com/FilipePS/Traduzir-paginas-web/issues" target="blank"
-      class="w3-bar-item w3-button w3-padding" data-i18n="lblReport">Report a problem</a>
-    <a href="https://crowdin.com/project/translate-web-pages" target="blank" class="w3-bar-item w3-button w3-padding"
-      data-i18n="lblTranslateInterface">Translate the interface</a>
   </nav>
 
   <header class="w3-bar w3-top w3-black w3-hide-large w3-xlarge" id="header">
     <div class="w3-bar-item w3-padding-20 w3-wide">TWP</div>
-    <a class="w3-bar-item w3-button w3-padding-24 w3-right" id="btnOpenMenu">
+    <button class="w3-bar-item w3-button w3-padding-24 w3-right" id="btnOpenMenu" aria-label="Menu" aria-expanded="false" aria-controls="sideBar" data-i18n-title="btnOptions">
       <div class="menu-container" id="menuContainer">
         <div class="bar1"></div>
         <div class="bar2"></div>
@@ -45,26 +40,21 @@
         <div class="bar4"></div>
         <div class="bar5"></div>
       </div>
-    </a>
+    </button>
   </header>
 
   <div class="w3-main" style="margin-left: 300px">
     <div class="w3-hide-large" style="margin-top: 83px"></div>
 
     <header class="w3-container w3-xlarge">
-      <p id="itemSelectedName" data-i18n="lblSettings" style="float: left">
-        Settings
-      </p>
-      <p style="float: right; display: none" id="btnPatreon">
-        <a href="https://www.patreon.com/filipeps" target="blank" class="patreonButton"><img src="/icons/patreon.png"
-            style="height: 40px" /></a>
-      </p>
+      <p class="settings-eyebrow" data-i18n="lblSettings">Settings</p>
+      <h1 id="itemSelectedName" data-i18n="msgLanguages" tabindex="-1">Languages</h1>
     </header>
 
     <div>
       <div id="languages" class="w3-container">
-        <p><b data-i18n="msgExtUILanguage">Extension user interface language</b></p>
-        <select id="selectUiLanguage" class="w3-select w3-half w3-border w3-round" style="margin-left: 20px;">
+        <div class="settings-card">
+          <div class="setting-row"><label for="selectUiLanguage" data-i18n="msgExtUILanguage">Extension user interface language</label><div class="setting-control"><select id="selectUiLanguage" class="w3-select w3-half w3-border w3-round">
           <option value="default" selected data-i18n="msgDefaultLanguage">Default language</option>
           <option value="af">Afrikaans - Afrikaans</option>
           <option value="ca">català - Catalan</option>
@@ -109,42 +99,26 @@
           <option value="zh-TW">中文 (繁體) - Chinese (Traditional)</option>
           <option value="zh-CN">中文（简体） - Chinese (Simplified)</option>
           <option value="ja">日本語 - Japanese</option>
-        </select>
-        <button class="w3-button w3-blue w3-round w3-margin-left" data-i18n="btnApply"
-          id="btnApplyUiLanguage">Apply</button>
-        <br />
-        <br />
-
-        <p><b data-i18n="msgSelectTargetLanguage">Translate websites into this target language</b></p>
-        <select id="selectTargetLanguage" class="w3-select w3-half w3-border w3-round"
-          style="margin-left: 20px;"></select>
-        <br />
-        <br />
-
-        <p><b data-i18n="msgSelectTargetLanguageForText">Translate selected text into this target language</b></p>
-        <select id="selectTargetLanguageForText" class="w3-select w3-half w3-border w3-round"
-          style="margin-left: 20px;"></select>
-        <br />
-        <br />
+        </select><button class="w3-button w3-blue w3-round w3-margin-left" data-i18n="btnApply"
+          id="btnApplyUiLanguage">Apply</button></div></div>
+          <div class="setting-row"><label for="selectTargetLanguage" data-i18n="msgSelectTargetLanguage">Translate websites into this target language</label><div class="setting-control"><select id="selectTargetLanguage" class="w3-select w3-half w3-border w3-round"
+         ></select></div></div>
+          <div class="setting-row"><label for="selectTargetLanguageForText" data-i18n="msgSelectTargetLanguageForText">Translate selected text into this target language</label><div class="setting-control"><select id="selectTargetLanguageForText" class="w3-select w3-half w3-border w3-round"
+         ></select></div></div>
+        </div>
 
         <p><b data-i18n="msgFavoriteLanguages">Favorite languages</b></p>
-        <ul class="w3-ul">
+        <ul class="w3-ul settings-card favorites-card">
           <li class="w3-row">
-            <p class="w3-half" data-i18n="lblFavoriteLanguage" data-i18n-ph-value="1">
-              Favorite language 1
-            </p>
+            <label for="favoriteLanguage1" class="w3-half" data-i18n="lblFavoriteLanguage" data-i18n-ph-value="1">Favorite language 1</label>
             <select id="favoriteLanguage1" class="w3-select w3-half w3-border w3-round"></select>
           </li>
           <li class="w3-row">
-            <p class="w3-half" data-i18n="lblFavoriteLanguage" data-i18n-ph-value="2">
-              Favorite language 2
-            </p>
+            <label for="favoriteLanguage2" class="w3-half" data-i18n="lblFavoriteLanguage" data-i18n-ph-value="2">Favorite language 2</label>
             <select id="favoriteLanguage2" class="w3-select w3-half w3-border w3-round"></select>
           </li>
           <li class="w3-row">
-            <p class="w3-half" data-i18n="lblFavoriteLanguage" data-i18n-ph-value="3">
-              Favorite language 3
-            </p>
+            <label for="favoriteLanguage3" class="w3-half" data-i18n="lblFavoriteLanguage" data-i18n-ph-value="3">Favorite language 3</label>
             <select id="favoriteLanguage3" class="w3-select w3-half w3-border w3-round"></select>
           </li>
         </ul>
@@ -283,49 +257,39 @@
 
       <div id="translations" class="w3-container">
         <div id="selectServiceContainer">
-          <p>
-            <b data-i18n="lblPageTranslationService">Page translation service</b>
-          </p>
-          <select id="pageTranslatorService" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="pageTranslatorService" data-i18n="lblPageTranslationService">Page translation service</label><div class="setting-control"><select id="pageTranslatorService" class="w3-select w3-margin">
             <option value="google">Google</option>
             <option value="bing">Bing</option>
             <option value="yandex">Yandex</option>
-          </select>
+          </select></div></div>
           <br />
-          <p>
-            <b data-i18n="lblTextTranslationService">Text Translation Service</b>
-          </p>
-          <select id="textTranslatorService" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="textTranslatorService" data-i18n="lblTextTranslationService">Text Translation Service</label><div class="setting-control"><select id="textTranslatorService" class="w3-select w3-margin">
             <option value="google">Google</option>
             <option value="bing">Bing</option>
             <option value="yandex">Yandex</option>
             <option value="deepl">DeepL</option>
-          </select>
+          </select></div></div>
           <br />
-          <p>
-            <b data-i18n="lblTextToSpeechService">Text-to-speech service</b>
-          </p>
-          <select id="textToSpeechService" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="textToSpeechService" data-i18n="lblTextToSpeechService">Text-to-speech service</label><div class="setting-control"><select id="textToSpeechService" class="w3-select w3-margin">
             <option value="google">Google</option>
             <option value="bing">Bing</option>
-          </select>
+          </select></div></div>
           <br />
         </div>
-        <p><b data-i18n="lblTtsSpeed">Text-to-speech audio speed</b></p>
-        <input id="ttsSpeed" type="range" min="0.25" max="2.0" step="0.25" value="1.0" />
-        <output id="displayTtsSpeed">1.0</output>
-        <br />
-        <p><b data-i18n="lblTtsVolume">Text-to-speech audio volume</b></p>
-        <input id="ttsVolume" type="range" min="0.1" max="2.0" step="0.1" value="1.0" />
-        <output id="displayTtsVolume">1.0</output>
-        <br />
-        <p>
-          <b data-i18n="lblShowTranslateSelectedButton">Show the button to translate the selected text</b>
-        </p>
-        <select id="showTranslateSelectedButton" class="w3-select w3-margin">
+        <div class="preference-group">
+          <div class="setting-row"><label for="ttsSpeed" data-i18n="lblTtsSpeed">Text-to-speech audio speed</label><div class="setting-control range-control">
+            <input id="ttsSpeed" type="range" min="0.25" max="2.0" step="0.25" value="1.0" />
+            <output id="displayTtsSpeed" for="ttsSpeed">1.0</output>
+          </div></div>
+          <div class="setting-row"><label for="ttsVolume" data-i18n="lblTtsVolume">Text-to-speech audio volume</label><div class="setting-control range-control">
+            <input id="ttsVolume" type="range" min="0.1" max="2.0" step="0.1" value="1.0" />
+            <output id="displayTtsVolume" for="ttsVolume">1.0</output>
+          </div></div>
+        </div>
+        <div class="setting-row preference-row"><label for="showTranslateSelectedButton" data-i18n="lblShowTranslateSelectedButton">Show the button to translate the selected text</label><div class="setting-control"><select id="showTranslateSelectedButton" class="w3-select w3-margin">
           <option value="yes" data-i18n="msgYes">Yes</option>
           <option value="no" data-i18n="msgNo">No</option>
-        </select>
+        </select></div></div>
         <div class="w3-container" id="translateSelectedAdvancedOptions">
           <input type="checkbox" class="check" id="dontShowIfIsNotValidText" />
           <label for="dontShowIfIsNotValidText" data-i18n="dontShowIfIsNotValidText">Do not show if the selected text is
@@ -350,85 +314,60 @@
         </div>
         <div class="desktopOnly">
           <br />
-          <p>
-            <b data-i18n="lblShowOriginalTextWhenHovering">Show original text when hovering</b>
-          </p>
-          <select id="showOriginalTextWhenHovering" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="showOriginalTextWhenHovering" data-i18n="lblShowOriginalTextWhenHovering">Show original text when hovering</label><div class="setting-control"><select id="showOriginalTextWhenHovering" class="w3-select w3-margin">
             <option value="yes" data-i18n="msgYes">Yes</option>
             <option value="no" data-i18n="msgNo">No</option>
-          </select>
+          </select></div></div>
         </div>
         <br />
-        <p>
-          <b data-i18n="lblAutoTranslateWhenClickingALink">Automatically translate when clicking on a link that takes
+        <div class="setting-row preference-row"><label for="autoTranslateWhenClickingALink" data-i18n="lblAutoTranslateWhenClickingALink">Automatically translate when clicking on a link that takes
             you to
-            the same domain as the current site</b>
-        </p>
-        <select id="autoTranslateWhenClickingALink" class="w3-select w3-margin">
+            the same domain as the current site</label><div class="setting-control"><select id="autoTranslateWhenClickingALink" class="w3-select w3-margin">
           <option value="no" data-i18n="msgNo">No</option>
           <option value="yes" data-i18n="msgYes">Yes</option>
-        </select>
+        </select></div></div>
         <br />
-        <p>
-          <b data-i18n="lblTranslateDynamicallyCreatedContent">Translate dynamically created content</b>
-        </p>
-        <select id="translateDynamicallyCreatedContent" class="w3-select w3-margin">
+        <div class="setting-row preference-row"><label for="translateDynamicallyCreatedContent" data-i18n="lblTranslateDynamicallyCreatedContent">Translate dynamically created content</label><div class="setting-control"><select id="translateDynamicallyCreatedContent" class="w3-select w3-margin">
           <option value="no" data-i18n="msgNo">No</option>
           <option value="yes" data-i18n="msgYes">Yes</option>
-        </select>
+        </select></div></div>
         <br />
-        <p>
-          <b data-i18n="lblDontSortResults">Do not sort translation results</b>
-        </p>
-        <select id="dontSortResults" class="w3-select w3-margin">
+        <div class="setting-row preference-row"><label for="dontSortResults" data-i18n="lblDontSortResults">Do not sort translation results</label><div class="setting-control"><select id="dontSortResults" class="w3-select w3-margin">
           <option value="no" data-i18n="msgNo">No</option>
           <option value="yes" data-i18n="msgYes">Yes</option>
-        </select>
+        </select></div></div>
         <br />
-        <p>
-          <b data-i18n="lblTranslateTag_pre">Enable translation for the tag &lt;PRE&gt;</b>
-        </p>
-        <select id="translateTag_pre" class="w3-select w3-margin">
+        <div class="setting-row preference-row"><label for="translateTag_pre" data-i18n="lblTranslateTag_pre">Enable translation for the tag &lt;PRE&gt;</label><div class="setting-control"><select id="translateTag_pre" class="w3-select w3-margin">
           <option value="yes" data-i18n="msgYes">Yes</option>
           <option value="no" data-i18n="msgNo">No</option>
-        </select>
+        </select></div></div>
         <br />
-        <p>
-          <b data-i18n="msgEnableIframePageTranslation">Enable page translation in &lt;IFRAME&gt;</b>
-        </p>
-        <select id="enableIframePageTranslation" class="w3-select w3-margin">
+        <div class="setting-row preference-row"><label for="enableIframePageTranslation" data-i18n="msgEnableIframePageTranslation">Enable page translation in &lt;IFRAME&gt;</label><div class="setting-control"><select id="enableIframePageTranslation" class="w3-select w3-margin">
           <option value="yes" data-i18n="msgYes">Yes</option>
           <option value="no" data-i18n="msgNo">No</option>
-        </select>
+        </select></div></div>
         <br />
       </div>
 
       <div id="style" class="w3-container">
         <div class="desktopOnly">
-          <p>
-            <b data-i18n="lblSelectPopupInterfaceStyle">Select popup interface style</b>
-          </p>
-          <select id="useOldPopup" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="useOldPopup" data-i18n="lblSelectPopupInterfaceStyle">Select popup interface style</label><div class="setting-control"><select id="useOldPopup" class="w3-select w3-margin">
             <option value="yes" data-i18n="msgInterfaceSimple">Simple</option>
             <option value="no" data-i18n="msgInterfaceComplex">Complex</option>
-          </select>
+          </select></div></div>
         </div>
 
-        <p><b data-i18n="lblDarkMode">Dark mode</b></p>
-        <select id="darkMode" class="w3-select w3-margin">
+        <div class="setting-row preference-row"><label for="darkMode" data-i18n="lblDarkMode">Dark mode</label><div class="setting-control"><select id="darkMode" class="w3-select w3-margin">
           <option value="auto" data-i18n="msgAutomatic">Automatic</option>
           <option value="yes" data-i18n="msgYes">Yes</option>
           <option value="no" data-i18n="msgNo">No</option>
-        </select>
+        </select></div></div>
 
         <div class="desktopOnly">
-          <p>
-            <b data-i18n="popupBlueWhenSiteIsTranslated">Make the pop-up icon blue when the site is translated</b>
-          </p>
-          <select id="popupBlueWhenSiteIsTranslated" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="popupBlueWhenSiteIsTranslated" data-i18n="popupBlueWhenSiteIsTranslated">Make the pop-up icon blue when the site is translated</label><div class="setting-control"><select id="popupBlueWhenSiteIsTranslated" class="w3-select w3-margin">
             <option value="yes" data-i18n="msgYes">Yes</option>
             <option value="no" data-i18n="msgNo">No</option>
-          </select>
+          </select></div></div>
         </div>
       </div>
 
@@ -477,13 +416,10 @@
             <br>
           </div>
         </div>
-        <p>
-          <b data-i18n="useAlternativeService">Silently use an alternate translation service if the current target
-            language is not supported by the selected translation service</b>
-          <select id="useAlternativeService" class="w3-select w3-margin">
-            <option value="yes" data-i18n="msgYes">Yes</option>
-            <option value="no" data-i18n="msgNo">No</option>
-          </select>
+        <div class="setting-row preference-row"><label for="useAlternativeService" data-i18n="useAlternativeService">Silently use an alternate translation service if the current target language is not supported by the selected translation service</label><div class="setting-control"><select id="useAlternativeService" class="w3-select w3-margin">
+          <option value="yes" data-i18n="msgYes">Yes</option>
+          <option value="no" data-i18n="msgNo">No</option>
+        </select></div></div>
       </div>
 
       <div id="storage" class="w3-container">
@@ -493,11 +429,10 @@
           <button id="btnCalculateStorage" data-i18n="calculateStorage" style="font-size: 12px">
             Calculate</button><i id="storageUsed">0 KB</i> <br />
 
-          <p><b data-i18n="lblEnableDiskCache">Enable persistent translation cache (on-disk cache)</b></p>
-          <select id="enableDiskCache" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="enableDiskCache" data-i18n="lblEnableDiskCache">Enable persistent translation cache (on-disk cache)</label><div class="setting-control"><select id="enableDiskCache" class="w3-select w3-margin">
             <option value="yes" data-i18n="msgYes">Yes</option>
             <option value="no" data-i18n="msgNo" selected>No</option>
-          </select>
+          </select></div></div>
           <br />
 
           <button class="w3-button w3-light-grey w3-round" data-i18n="deleteTranslationCache"
@@ -519,60 +454,38 @@
       </div>
 
       <div id="others" class="w3-container">
-        <div class="desktopOnly">
-          <p>
-            <b data-i18n="lblShowReleaseNotes">Show release notes when updating</b>
-          </p>
-          <select id="showReleaseNotes" class="w3-select w3-margin">
-            <option value="yes" data-i18n="msgYes">Yes</option>
-            <option value="no" data-i18n="msgNo">No</option>
-          </select>
-        </div>
-        <br />
-        <p><b data-i18n="msgWhenShowMobilePopup">When to show the popup on mobile devices</b></p>
-        <select id="whenShowMobilePopup" class="w3-select w3-margin">
+
+        <div class="setting-row preference-row"><label for="whenShowMobilePopup" data-i18n="msgWhenShowMobilePopup">When to show the popup on mobile devices</label><div class="setting-control"><select id="whenShowMobilePopup" class="w3-select w3-margin">
           <option value="when-necessary" data-i18n="msgWhenNecessary">When necessary</option>
           <option value="only-when-i-touch" data-i18n="msgOnlyWhenItouch3Fingers">Only when I touch three fingers on the screen</option>
           <option value="always-show" data-i18n="msgAlwaysShow">Always show</option>
-        </select>
+        </select></div></div>
         <div class="desktopOnly">
           <br />
           <div class="firefox-only">
-            <p>
-              <b data-i18n="lblButtonInTheAddressBar">Show button in the address bar</b>
-            </p>
-            <select id="showButtonInTheAddressBar" class="w3-select w3-margin">
+            <div class="setting-row preference-row"><label for="showButtonInTheAddressBar" data-i18n="lblButtonInTheAddressBar">Show button in the address bar</label><div class="setting-control"><select id="showButtonInTheAddressBar" class="w3-select w3-margin">
               <option value="yes" data-i18n="msgYes">Yes</option>
               <option value="no" data-i18n="msgNo">No</option>
-            </select>
+            </select></div></div>
             <br />
           </div>
-          <p>
-            <b data-i18n="lblShowContextMenu">Show the option to translate the page in the context menu</b>
-          </p>
-          <select id="showTranslatePageContextMenu" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="showTranslatePageContextMenu" data-i18n="lblShowContextMenu">Show the option to translate the page in the context menu</label><div class="setting-control"><select id="showTranslatePageContextMenu" class="w3-select w3-margin">
             <option value="yes" data-i18n="msgYes">Yes</option>
             <option value="no" data-i18n="msgNo">No</option>
-          </select>
+          </select></div></div>
           <br />
-          <p>
-            <b data-i18n="lblShowTranslateSelectedContextMenu">Show the option to translate the selected text in the
+          <div class="setting-row preference-row"><label for="showTranslateSelectedContextMenu" data-i18n="lblShowTranslateSelectedContextMenu">Show the option to translate the selected text in the
               context
-              menu</b>
-          </p>
-          <select id="showTranslateSelectedContextMenu" class="w3-select w3-margin">
+              menu</label><div class="setting-control"><select id="showTranslateSelectedContextMenu" class="w3-select w3-margin">
             <option value="yes" data-i18n="msgYes">Yes</option>
             <option value="no" data-i18n="msgNo">No</option>
-          </select>
+          </select></div></div>
           <br />
-          <p>
-            <b data-i18n="translateClickingOnce">Translate the page by clicking once on the button in the
-              address bar. (To see the popup, right-click)</b>
-          </p>
-          <select id="translateClickingOnce" class="w3-select w3-margin">
+          <div class="setting-row preference-row"><label for="translateClickingOnce" data-i18n="translateClickingOnce">Translate the page by clicking once on the button in the
+              address bar. (To see the popup, right-click)</label><div class="setting-control"><select id="translateClickingOnce" class="w3-select w3-margin">
             <option value="no" data-i18n="msgNo">No</option>
             <option value="yes" data-i18n="msgYes">Yes</option>
-          </select>
+          </select></div></div>
         </div>
       </div>
 
@@ -634,80 +547,8 @@
         </div>
       </div>
 
-      <div>
-        <div id="donation" class="w3-container">
-          <section
-            style="background-color: #87CEEB; padding: 20px; border-radius: 20px; box-shadow: 0 0 10px 3px black;">
-            <div style="font-size: 1.2em;">
-              <p style="white-space: pre-line;" data-i18n="donationText">I have been developing, updating, and
-                supporting this
-                extension for over three years. It's amazing to see that we have over 600,000 daily users, and all of
-                these
-                people have been able to migrate to Firefox permanently.
-
-                I aim to release a new version of this extension every month and keep improving it.
-
-                I would be grateful if you could help me financially by becoming a Patreon member and supporting me in
-                bringing improvements to this extension.
-
-                Thank you to everyone who has already contributed to this project.</p>
-
-              <div style="display: flex; justify-content: space-between;">
-                <div>
-                  <a href="https://www.patreon.com/filipeps" target="blank" class="patreonButton"><img
-                      src="/icons/patreon.png" alt="Become a patreon" width="260" /></a>
-                </div>
-
-                <div style="font-size: 0.9em;">
-                  <b>
-                    <div style="display: inline-block" data-i18n="donatewithpaypal">
-                      Donate With PayPal
-                    </div>
-                  </b>
-                  <select id="currency" style="margin-left: 8px">
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="BRL">BRL</option>
-                  </select>
-
-                  <div id="donateInUSD">
-                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-                        <input type="hidden" name="cmd" value="_s-xclick" />
-                        <input type="hidden" name="hosted_button_id" value="9RDVSNMACNYBQ" />
-                        <input type="hidden" name="currency_code" value="USD" />
-                        <input type="image" src="/icons/paypal-donate-button.png" border="0" name="submit" alt="PayPal" />
-                        <img alt="" border="0" src="/icons/pixel.gif" width="1" height="1" />
-                    </form>
-                  </div>
-
-                <div id="donateInEUR">
-                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-                        <input type="hidden" name="cmd" value="_s-xclick" />
-                        <input type="hidden" name="hosted_button_id" value="LZFMBNEXZPULE" />
-                        <input type="hidden" name="currency_code" value="EUR" />
-                        <input type="image" src="/icons/paypal-donate-button.png" border="0" name="submit" alt="PayPal" />
-                        <img alt="" border="0" src="/icons/pixel.gif" width="1" height="1" />
-                    </form>
-                </div>
-
-                  <div id="donateInBRL">
-                    <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
-                        <input type="hidden" name="cmd" value="_s-xclick" />
-                        <input type="hidden" name="hosted_button_id" value="GE76HB72PUCVW" />
-                        <input type="hidden" name="currency_code" value="BRL" />
-                        <input type="image" src="/icons/paypal-donate-button.png" border="0" name="submit" alt="PayPal" />
-                        <img alt="" border="0" src="/icons/pixel.gif" width="1" height="1" />
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div id="release_notes" class="w3-container"></div>
-      </div>
     </div>
+  </div>
 
     <script src="/lib/polyfill.js"></script>
     <script src="/lib/checkedLastError.js"></script>
@@ -716,6 +557,7 @@
     <script src="/lib/config.js"></script>
     <script src="/lib/platformInfo.js"></script>
     <script src="/lib/i18n.js"></script>
+    <script src="settings-ui.js"></script>
     <script src="options.js"></script>
 </body>
 
