@@ -620,5 +620,14 @@
   },
   "btnChangePosition": {
     "message": "Change position"
+  },
+  "nativePopupPlacement": {
+    "message": "Compact popup position"
+  },
+  "nativeUsePagePopup": {
+    "message": "Show at top right of page"
+  },
+  "nativeUseToolbarPopup": {
+    "message": "Show below the toolbar"
   }
 }

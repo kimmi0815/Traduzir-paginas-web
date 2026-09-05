@@ -750,6 +750,8 @@ twpConfig
       updateDarkMode();
     };
     $("#useOldPopup").value = twpConfig.get("useOldPopup");
+    $("#popupPlacement").value = twpConfig.get("popupPlacement");
+    $("#popupPlacement").onchange = (e) => twpConfig.set("popupPlacement", e.target.value);
 
     $("#darkMode").onchange = (e) => {
       twpConfig.set("darkMode", e.target.value);

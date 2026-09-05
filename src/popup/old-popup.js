@@ -1,18 +1,24 @@
 "use strict";
 
 // The compact popup uses the same configuration and tab-message contract as TWP.
-(async () => {
+const twpCompactPopup = async (environment = {}) => {
+  const root = environment.root || document;
+  const surface = environment.surface || document.body;
+  const themeRoot = environment.surface || document.documentElement;
+  const closePopup = environment.close || (() => window.close());
+  const openUrl = environment.openUrl || ((url) => tabsCreate(url));
+  const navigate = environment.navigate || ((path) => { window.location = path; });
   await twpConfig.onReady();
   await twpI18n.updateUiMessages();
-  twpI18n.translateDocument();
-  const $ = (selector) => document.querySelector(selector);
+  twpI18n.translateDocument(root);
+  const $ = (selector) => root.querySelector(selector);
   const message = (key, value) => twpI18n.getMessage(key, value);
-  document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
+  root.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
     element.setAttribute('aria-label', message(element.dataset.i18nAriaLabel));
   });
   const systemTheme = matchMedia('(prefers-color-scheme: dark)');
   function updateTheme() {
-    document.documentElement.dataset.theme =
+    themeRoot.dataset.theme =
       twpConfig.get('darkMode') === 'yes' ||
       (twpConfig.get('darkMode') === 'auto' && systemTheme.matches) ? 'dark' : 'light';
   }
@@ -45,8 +51,17 @@
   let revision = 0;
   let pollTimer;
   let closed = false;
+  let opening = 0;
+  const languageTabs = $('.language-tabs');
+  const tabIndicator = $('.tab-indicator');
+  let indicatorInitialized = false;
+
+  function setTabMotion(event) {
+    languageTabs.dataset.keyboard = String(event?.detail === 0);
+  }
 
   function query(action) {
+    if (environment.query) return environment.query(action);
     return new Promise((resolve) => {
       if (!activeTab) return resolve(undefined);
       chrome.tabs.sendMessage(activeTab.id, { action }, { frameId: 0 }, (value) => {
@@ -58,6 +73,7 @@
   function command(action, values = {}) {
     if (!available || !activeTab) return;
     const payload = { action, ...values };
+    if (environment.command) return environment.command(payload);
     if (action === 'translatePage' && twpConfig.get('enableIframePageTranslation') !== 'yes') {
       chrome.tabs.sendMessage(activeTab.id, payload, { frameId: 0 }, checkedLastError);
     } else {
@@ -75,21 +91,28 @@
     } else if (focus) $('#btnMenu').focus();
   }
   function render() {
-    document.body.dataset.state = state;
-    const translated = state === 'translated';
+    surface.dataset.state = state;
+    const translated = state === 'translated' || state === 'translating';
     $('#btnRestore').textContent = sourceLanguage === 'und'
       ? message('nativeDetectedLanguage') : (languages[sourceLanguage] || sourceLanguage);
     $('#btnTranslate').textContent = languages[targetLanguage] || targetLanguage;
     $('#btnRestore').setAttribute('aria-selected', String(!translated));
     $('#btnTranslate').setAttribute('aria-selected', String(translated));
+    tabIndicator.style.transform = translated ? 'translateX(100%)' : 'translateX(0)';
+    // Opening on an already translated page should not slide in from the original tab.
+    if (loaded && !indicatorInitialized) {
+      indicatorInitialized = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        languageTabs.dataset.ready = 'true';
+      }));
+    }
     $('#btnRestore').tabIndex = translated ? -1 : 0;
     $('#btnTranslate').tabIndex = translated ? 0 : -1;
-    $('#btnTranslate').disabled = !available || state === 'translating';
+    $('#btnTranslate').disabled = !available;
     $('#btnRestore').disabled = !available;
     $('#btnApplyLanguage').disabled = !available;
-    $('#statusRegion').hidden = !loaded || (available && state !== 'translating' && state !== 'error');
+    $('#statusRegion').hidden = !loaded || (available && state !== 'error');
     $('#popupStatus').textContent = !available ? message('nativeUnavailable')
-      : state === 'translating' ? message('lblTranslating')
       : state === 'error' ? message('lblError') : '';
     $('#btnTryAgain').hidden = !available || state !== 'error';
     $('#serviceName').textContent = { google: 'Google Translate', bing: 'Microsoft Translator', yandex: 'Yandex Translate' }[service] || service;
@@ -153,8 +176,11 @@
     clearTimeout(pollTimer);
     if (state === 'translating' && available) pollTimer = setTimeout(refresh, 350);
   }
-  function translate() {
+  function translate(event) {
     if (!available) return;
+    // Keep the selected tab focusable while ignoring duplicate translation requests.
+    if (state === 'translating' && targetSelect.value === targetLanguage) return;
+    setTabMotion(event);
     revision++;
     targetLanguage = targetSelect.value;
     twpConfig.setTargetLanguage(targetLanguage, twpConfig.get('targetLanguage') !== targetLanguage);
@@ -165,8 +191,9 @@
     clearTimeout(pollTimer);
     pollTimer = setTimeout(refresh, 150);
   }
-  function restore() {
+  function restore(event) {
     if (!available) return;
+    setTabMotion(event);
     revision++;
     clearTimeout(pollTimer);
     command('restorePage');
@@ -174,8 +201,8 @@
     render();
   }
   function openOptions(hash = '') {
-    tabsCreate(chrome.runtime.getURL('/options/options.html' + hash));
-    window.close();
+    openUrl(chrome.runtime.getURL('/options/options.html' + hash));
+    closePopup();
   }
   function runAction(action) {
     if (listActions[action]) {
@@ -198,17 +225,17 @@
       targetSelect.focus();
     } else if (action === 'moreOptions') openOptions();
     else if (action === 'donate') openOptions('#donation');
-    else if (action === 'translatePDF') tabsCreate('https://pdf.translatewebpages.org/');
+    else if (action === 'translatePDF') openUrl('https://pdf.translatewebpages.org/');
     else if (action === 'translateInExternalSite' && available) {
       const url = encodeURIComponent(activeTab.url);
       const language = encodeURIComponent(targetLanguage);
-      tabsCreate(service === 'yandex'
+      openUrl(service === 'yandex'
         ? `https://translate.yandex.com/translate?view=compact&url=${url}&lang=${language.split('-')[0]}`
         : `https://translate.google.com/translate?tl=${language}&u=${url}`);
     }
   }
   $('#btnMenu').onclick = () => setMenu($('#popupMenu').hidden);
-  $('#btnClose').onclick = () => window.close();
+  $('#btnClose').onclick = closePopup;
   $('#btnTranslate').onclick = translate;
   $('#btnRestore').onclick = restore;
   $('#btnTryAgain').onclick = translate;
@@ -218,10 +245,15 @@
     $('#languagePicker').hidden = true;
     $('#btnMenu').focus();
   };
-  $('#btnImproveTranslation').onclick = () => { window.location = 'improve-translation.html'; };
+  $('#btnImproveTranslation').onclick = () => navigate('improve-translation.html');
   $('#btnSwitchInterfaces').onclick = () => {
     twpConfig.set('useOldPopup', 'no');
-    window.location = 'popup.html';
+    navigate('popup.html');
+  };
+  $('#btnPopupPlacement').textContent = message(environment.root ? 'nativeUseToolbarPopup' : 'nativeUsePagePopup');
+  $('#btnPopupPlacement').onclick = () => {
+    twpConfig.set('popupPlacement', environment.root ? 'toolbar' : 'page');
+    closePopup();
   };
   $('#cbAlwaysTranslateThisLang').onchange = (event) => {
     if (sourceLanguage === 'und' || !available) return;
@@ -244,34 +276,57 @@
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
     const next = event.key === 'Home' ? $('#btnRestore') : event.key === 'End' ? $('#btnTranslate')
-      : document.activeElement === $('#btnRestore') ? $('#btnTranslate') : $('#btnRestore');
+      : root.activeElement === $('#btnRestore') ? $('#btnTranslate') : $('#btnRestore');
     if (!next.disabled) next.focus();
   };
-  document.addEventListener('keydown', (event) => {
+  root.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
     if (!$('#popupMenu').hidden) setMenu(false);
     else if (!$('#languagePicker').hidden) $('#btnReset').click();
-    else window.close();
+    else closePopup();
   });
   window.addEventListener('unload', () => { closed = true; clearTimeout(pollTimer); systemTheme.removeListener(updateTheme); });
   // Paint the saved target immediately; determine availability from the actual content script.
   $('#btnTranslate').textContent = languages[targetLanguage] || targetLanguage;
   $('#btnTranslate').disabled = true;
   $('#btnRestore').disabled = true;
-  [activeTab] = await new Promise((resolve) => chrome.tabs.query({ active: true, currentWindow: true }, resolve));
+  if (environment.tab) activeTab = environment.tab;
+  else [activeTab] = await new Promise((resolve) => chrome.tabs.query({ active: true, currentWindow: true }, resolve));
   if (activeTab && activeTab.url) {
     try { hostname = new URL(activeTab.url).hostname; } catch (_) { /* Non-web tabs have no site rules. */ }
   }
-  // Source-language detection may be slow; never hold the popup open waiting for it.
-  query('getOriginalTabLanguage').then((source) => {
-    sourceLanguage = source ? twpLang.fixTLanguageCode(source) || 'und' : 'und';
-    render();
-  });
-  const [pageLanguage, pageService, initialState] = await Promise.all([query('getCurrentPageLanguage'), query('getCurrentPageTranslatorService'), query('getCurrentPageLanguageState')]);
-  if (initialState === 'translated' && pageLanguage && pageLanguage !== 'und' && pageLanguage !== 'original') {
-    targetLanguage = pageLanguage;
+  async function show() {
+    closed = false;
+    revision++;
+    loaded = false;
+    indicatorInitialized = false;
+    delete languageTabs.dataset.ready;
+    languageTabs.dataset.keyboard = 'false';
+    setMenu(false, false);
+    $('#languagePicker').hidden = true;
+    targetLanguage = twpConfig.get('targetLanguage');
+    try { hostname = new URL(activeTab.url).hostname; } catch (_) { hostname = ''; }
+    const snapshot = revision;
+    // Source-language detection may be slow; never delay opening the panel for it.
+    const currentOpening = ++opening;
+    query('getOriginalTabLanguage').then((source) => {
+      if (closed || currentOpening !== opening) return;
+      sourceLanguage = source ? twpLang.fixTLanguageCode(source) || 'und' : 'und';
+      render();
+    });
+    const [pageLanguage, pageService, initialState] = await Promise.all([query('getCurrentPageLanguage'), query('getCurrentPageTranslatorService'), query('getCurrentPageLanguageState')]);
+    if (closed || snapshot !== revision) return;
+    if ((initialState === 'translated' || initialState === 'translating') && pageLanguage && pageLanguage !== 'und' && pageLanguage !== 'original') targetLanguage = pageLanguage;
     targetSelect.value = targetLanguage;
+    if (pageService) service = pageService;
+    updateTheme();
+    await refresh();
   }
-  if (pageService) service = pageService;
-  await refresh();
-})();
+  await show();
+  return {
+    show,
+    hide() { closed = true; revision++; clearTimeout(pollTimer); },
+  };
+};

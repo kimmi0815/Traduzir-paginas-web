@@ -13,6 +13,7 @@
       <div class="language-tabs" role="tablist" aria-label="Translation" data-i18n-aria-label="msgTranslations">
         <button id="btnRestore" class="language-tab" role="tab" aria-selected="true" data-i18n="nativeDetectedLanguage">Detected language</button>
         <button id="btnTranslate" class="language-tab" role="tab" aria-selected="false" tabindex="-1"></button>
+        <span class="tab-indicator" aria-hidden="true"></span>
       </div>
       <button id="btnMenu" class="icon-button" aria-expanded="false" aria-controls="popupMenu" aria-label="Options" data-i18n-aria-label="btnOptions" title="Options" data-i18n-title="btnOptions">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
@@ -37,6 +38,7 @@
       <label class="menu-check" id="divAlwaysTranslateThisLang"><input id="cbAlwaysTranslateThisLang" type="checkbox"><span id="lblAlwaysTranslateThisLang"></span></label>
       <div id="menuActions"></div>
       <div class="menu-secondary">
+        <button id="btnPopupPlacement" data-i18n="nativeUsePagePopup">Show at top right of page</button>
         <button id="btnImproveTranslation" data-i18n="msgImproveTranslation">Improve translation</button>
         <button id="btnSwitchInterfaces" data-i18n="nativeDetailedInterface">Detailed interface</button>
       </div>
@@ -89,5 +91,6 @@
   <script src="/lib/config.js"></script>
   <script src="/lib/i18n.js"></script>
   <script src="old-popup.js"></script>
+  <script src="old-popup-bootstrap.js"></script>
 </body>
 </html>

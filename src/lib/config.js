@@ -33,6 +33,7 @@ const twpConfig = (function () {
     showTranslateSelectedButton: "yes",
     whenShowMobilePopup: "when-necessary", // when-necessary only-when-i-touch always-show
     useOldPopup: "yes",
+    popupPlacement: "page", // page toolbar (compact desktop popup)
     darkMode: "auto", // auto yes no
     popupBlueWhenSiteIsTranslated: "yes",
     popupPanelSection: 1,
@@ -103,7 +104,7 @@ const twpConfig = (function () {
    * @example
    * twpConfig.get("targetLanguages")
    * // returns ["en", "es", "de"]
-   * @param {DefaultConfigNames} name
+   * @param {DefaultConfigNames | "popupPlacement"} name
    * @returns {*} value
    */
   twpConfig.get = function (name) {
@@ -114,7 +115,7 @@ const twpConfig = (function () {
    * set the value of a config
    * @example
    * twpConfig.set("showReleaseNotes", "no")
-   * @param {DefaultConfigNames} name
+   * @param {DefaultConfigNames | "popupPlacement"} name
    * @param {*} value
    */
   twpConfig.set = function (name, value) {

@@ -620,5 +620,14 @@
   },
   "btnChangePosition": {
     "message": "位置を変更"
+  },
+  "nativePopupPlacement": {
+    "message": "コンパクトポップアップの表示位置"
+  },
+  "nativeUsePagePopup": {
+    "message": "ページ右上に表示"
+  },
+  "nativeUseToolbarPopup": {
+    "message": "ツールバーの下に表示"
   }
 }

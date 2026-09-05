@@ -12,6 +12,15 @@ node qa/ui-design/server.mjs
 
 Open `http://127.0.0.1:4190/preview.html`.
 
+For the rounded in-page alternative, open `http://127.0.0.1:4190/rounded-popup.html`.
+This harness runs the production `desktopPopup.js` and shared compact-popup controller in a
+closed shadow root with a mock message transport. It demonstrates rounded outer corners,
+shadows, tab switching, resizing, dismissal, and the return-to-toolbar menu action.
+The UI and message-routing checks do not prove real provider output or installed-browser behavior.
+
+Run `node --test qa/ui-design/page-popup.test.mjs` to check sender/tab scoping, allowed commands,
+iframe preferences, toolbar routing, rollback, and fallback when a panel cannot open.
+
 This serves the production HTML, CSS, localization, configuration, and UI scripts with a **mock browser-extension API**. It never contacts translation providers or changes installed-extension settings. Mock settings use tab session storage. No QA files are included in extension builds.
 
 Direct pages:
@@ -45,6 +54,13 @@ Commands sent by the popup are recorded in the DOM in `#fixture-trace`. This tes
 - Translation content scripts, background code, config storage implementation, manifest, and permissions are unchanged.
 
 ## Remaining installed-extension acceptance
+
+### Page-panel focus regression (2026-09-05)
+
+- Reproduced the blue outline around the initially focused dialog in the production page-panel fixture.
+- Scoped `outline: none` to `.popup-surface:focus`; kept the initial focus and control-level `:focus-visible` styles.
+- Visually verified no outer blue ring on opening, and a visible English-tab focus ring after Tab.
+- Background tests (6), Chromium/Firefox builds, and `git diff --check` passed. The installed Aside extension and target page still need reloading for this change.
 
 The subsequent settings-only polish, interaction checks, and review boundaries are documented in [settings-review.md](settings-review.md). Popup files and the shared theme were preserved during that pass.
 

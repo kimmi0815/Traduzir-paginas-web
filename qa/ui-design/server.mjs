@@ -10,7 +10,7 @@ http.createServer(async (req,res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
     const path = url.pathname === '/' ? '/popup/old-popup.html' : decodeURIComponent(url.pathname);
-    const fixture = ['/fixture.js','/preview.html','/preview.js'].includes(path);
+    const fixture = ['/fixture.js','/preview.html','/preview.js','/rounded-popup.html','/rounded-popup.js'].includes(path);
     const root = fixture ? qa : source;
     const file = resolve(root, '.' + path);
     if (!file.startsWith(root + '/')) { res.writeHead(403).end(); return; }

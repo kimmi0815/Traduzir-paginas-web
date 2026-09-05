@@ -3,6 +3,7 @@
   const params = new URLSearchParams(location.search);
   const locale = params.get('locale') || 'ja';
   const listeners = [];
+  const messageListeners = [];
   const saved = JSON.parse(sessionStorage.getItem('twp-ui-fixture') || '{}');
   const config = { uiLanguage: locale, targetLanguage: 'ja', targetLanguageTextTranslation: 'ja', targetLanguages: ['ja','en','es'], darkMode: 'no', ...saved };
   if (params.has('locale')) config.uiLanguage = locale;
@@ -29,7 +30,20 @@
   }
   window.chrome = {
     i18n:{ getUILanguage:()=>locale, getMessage:(key)=>Object.entries(english).find(([name])=>name.toLowerCase()===key.toLowerCase())?.[1].message || '', getAcceptLanguages: callback=>englishReady.then(()=>callback(['ja','en'])) },
-    runtime:{ getURL:path=>new URL(path,location.origin).href, getManifest:()=>manifest, sendMessage:(payload,callback)=>{if(callback)callback(payload.action==='getTabMimeType'?'text/html':undefined)}, reload:()=>location.reload() },
+    runtime:{
+      id: 'twp-ui-fixture',
+      onMessage: {addListener:fn=>messageListeners.push(fn)},
+      getURL:path=>new URL(path,location.origin).href, getManifest:()=>manifest,
+      sendMessage:(payload,callback)=>{
+        if (payload.action === 'compactPagePopupQuery') return chrome.tabs.sendMessage(1,{action:payload.query},{frameId:0},callback);
+        if (payload.action === 'compactPagePopupCommand') {
+          const scope = payload.command.action === 'translatePage' && config.enableIframePageTranslation !== 'yes' ? {frameId:0} : undefined;
+          return chrome.tabs.sendMessage(1,payload.command,scope,callback);
+        }
+        if (payload.action === 'compactPagePopupOpen') log({opened:payload.url});
+        if(callback)callback(payload.action==='getTabMimeType'?'text/html':undefined);
+      }, reload:()=>location.reload(),
+    },
     storage:{
       onChanged:{addListener:fn=>listeners.push(fn)},
       local:{get:(_,callback)=>queueMicrotask(()=>callback(config)),set:values=>{
@@ -60,5 +74,13 @@
     },
     commands:{getAll:callback=>manifestPromise.then(value=>callback(Object.entries(value.commands).map(([name,v])=>({name,description:v.description,shortcut:v.suggested_key?.default||''}))))},
     permissions:{request:(_,callback)=>callback?.(false),remove:()=>{}},
+  };
+  window.twpFixture = {
+    async togglePagePopup() {
+      const [html, theme, css] = await Promise.all(['/popup/old-popup.html','/lib/ui-theme.css','/popup/old-popup.css'].map(path=>fetch(path).then(r=>r.text())));
+      return new Promise(resolve => {
+        for (const listener of messageListeners) listener({action:'toggleCompactPagePopup',resources:{html,css:theme+'\n'+css}}, {id:'twp-ui-fixture'}, resolve);
+      });
+    },
   };
 })();

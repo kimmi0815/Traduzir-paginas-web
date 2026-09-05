@@ -27,3 +27,4 @@ importScripts("/background/translationCache.js");
 importScripts("/background/translationService.js");
 importScripts("/background/textToSpeech.js");
 importScripts("/background/background.js");
+importScripts("/background/pagePopup.js");
