@@ -43,6 +43,7 @@ const twpCompactPopup = async (environment = {}) => {
   targetSelect.value = targetLanguage;
   let sourceLanguage = 'und';
   let state = 'original';
+  let displayMode = twpConfig.get('translationDisplayMode') || 'translation';
   let available = false;
   let loaded = false;
   let service = twpConfig.get('pageTranslatorService');
@@ -138,6 +139,16 @@ const twpCompactPopup = async (environment = {}) => {
     }
     return flagActions[action] && twpConfig.get(flagActions[action]) === 'yes';
   }
+  const bilingualButton = document.createElement('button');
+  bilingualButton.type = 'button';
+  bilingualButton.addEventListener('click', () => {
+    displayMode = displayMode === 'bilingual' ? 'translation' : 'bilingual';
+    twpConfig.set('translationDisplayMode', displayMode);
+    state = 'original';
+    translate();
+    renderMenu();
+  });
+  $('#menuActions').appendChild(bilingualButton);
   const menuButtons = [];
   for (const option of $('#btnOptions').options) {
     if (option.value === 'options') continue;
@@ -149,6 +160,10 @@ const twpCompactPopup = async (environment = {}) => {
     menuButtons.push([button, option]);
   }
   function renderMenu() {
+    const bilingual = displayMode === 'bilingual';
+    bilingualButton.textContent = (bilingual ? '✓  ' : '') + message('nativeBilingualMode');
+    bilingualButton.setAttribute('aria-pressed', String(bilingual));
+    bilingualButton.disabled = !available;
     $('#divAlwaysTranslateThisLang').hidden = !available || sourceLanguage === 'und' || sourceLanguage === targetLanguage;
     $('#lblAlwaysTranslateThisLang').textContent = message('lblAlwaysTranslate', languages[sourceLanguage] || sourceLanguage);
     $('#cbAlwaysTranslateThisLang').checked = twpConfig.get('alwaysTranslateLangs').includes(sourceLanguage);
@@ -186,7 +201,7 @@ const twpCompactPopup = async (environment = {}) => {
     twpConfig.setTargetLanguage(targetLanguage, twpConfig.get('targetLanguage') !== targetLanguage);
     state = 'translating';
     $('#languagePicker').hidden = true;
-    command('translatePage', { targetLanguage });
+    command('translatePage', { targetLanguage, displayMode });
     render();
     clearTimeout(pollTimer);
     pollTimer = setTimeout(refresh, 150);
@@ -316,10 +331,11 @@ const twpCompactPopup = async (environment = {}) => {
       sourceLanguage = source ? twpLang.fixTLanguageCode(source) || 'und' : 'und';
       render();
     });
-    const [pageLanguage, pageService, initialState] = await Promise.all([query('getCurrentPageLanguage'), query('getCurrentPageTranslatorService'), query('getCurrentPageLanguageState')]);
+    const [pageLanguage, pageService, initialState, pageDisplayMode] = await Promise.all([query('getCurrentPageLanguage'), query('getCurrentPageTranslatorService'), query('getCurrentPageLanguageState'), query('getTranslationDisplayMode')]);
     if (closed || snapshot !== revision) return;
     if ((initialState === 'translated' || initialState === 'translating') && pageLanguage && pageLanguage !== 'und' && pageLanguage !== 'original') targetLanguage = pageLanguage;
     targetSelect.value = targetLanguage;
+    displayMode = initialState === 'translated' && pageDisplayMode ? pageDisplayMode : twpConfig.get('translationDisplayMode') || 'translation';
     if (pageService) service = pageService;
     updateTheme();
     await refresh();

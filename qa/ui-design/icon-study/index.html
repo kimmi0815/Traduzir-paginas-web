@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TWP · Toolbar icon study</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f8f9fb;color:#24272c;font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}main{max-width:1120px;margin:auto;padding:48px 32px}header{margin-bottom:32px}.eyebrow{font-size:11px;color:#66707c;letter-spacing:.12em}h1{font-size:28px;font-weight:550;letter-spacing:-.6px;margin:8px 0}p{margin:8px 0;color:#65707a}h2{font-size:17px;font-weight:550;margin:0}.choices{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}.card{background:white;border-radius:16px;box-shadow:0 0 0 1px #2021240c,0 3px 12px #20212405;overflow:hidden}.heading{padding:22px 22px 0}.number{font-size:11px;color:#74808b;display:block;margin-bottom:6px}.badge{display:inline-block;font-size:10px;font-weight:500;color:#1967d2;background:#e8f0fe;border-radius:4px;padding:2px 6px;margin-left:6px;vertical-align:middle}.large{display:flex;justify-content:center;align-items:center;gap:40px;padding:32px 16px}.sample{text-align:center}.sample small{display:block;color:#79838c;font-size:11px;margin-top:10px}.icon{width:24px;height:24px;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:inherit}.large .icon{width:56px;height:56px}.mono{color:#52565c}.on{color:#1967d2}.caption{font-size:12px;padding:0 22px 22px;min-height:62px}.actual{border-top:1px solid #edf0f3;padding:18px 22px}.label{font-size:11px;color:#7a838c;margin-bottom:12px}.sizes{display:flex;align-items:center;gap:24px;height:36px}.size{display:flex;align-items:center;gap:6px}.size small{font-size:10px;color:#9299a0}.toolbars{padding:20px 22px;background:#f4f5f7;border-top:1px solid #edf0f3}.bar{height:40px;display:flex;align-items:center;justify-content:flex-end;gap:18px;color:#68717b}.address{height:22px;flex:1;background:#e8ebef;border-radius:6px}.neighbor{width:16px;height:16px}.state-button{display:flex;position:relative;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:transparent;cursor:pointer;color:#52565c;flex-shrink:0}.state-button .icon{width:20px;height:20px}.state-button[aria-pressed=true]{color:#1967d2}.state-button[aria-pressed=true]::after{content:"";position:absolute;bottom:0;left:6px;right:6px;height:2px;border-radius:2px;background:currentColor}.state-button:hover{background:#e4e8ee}.state-button:focus-visible{outline:2px solid #1967d2;outline-offset:3px}.dark{background:#292a2d;color:#bbc0c7;border-radius:8px;padding:0 10px;margin-top:8px}.dark .address{background:#393b40}.dark .state-button{color:#d4d7dc}.dark .state-button[aria-pressed=true]{color:#8ab4f8}.dark .state-button:hover{background:#40434a}.hint{font-size:11px;margin-top:12px;color:#77818a}footer{border-top:1px solid #e0e4e9;margin-top:32px;padding-top:18px;font-size:12px;color:#747e89}button:active{transform:scale(.96)}@media(max-width:850px){.choices{grid-template-columns:1fr}.caption{min-height:0}main{padding:28px 18px}}
+</style>
+</head>
+<body>
+<main>
+<header><span class="eyebrow">TOOLBAR / ICON STUDY</span><h1>小さく、静かに。翻訳の状態が分かる。</h1><p>通常はグレー。翻訳オンでは青＋短い下線。形を変えず、状態だけを伝えます。</p></header>
+<div class="choices" id="choices"></div>
+<footer>上段は形を比較するための拡大表示。下段は16・20・24pxと、明暗のツールバーでの表示です。ツールバー内のアイコンを押すと状態が切り替わります。拡張機能本体にはまだ適用していません。</footer>
+</main>
+<script src="study.js"></script>
+</body>
+</html>

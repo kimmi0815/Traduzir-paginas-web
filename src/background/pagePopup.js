@@ -9,7 +9,7 @@
   const nativePopup = () => twpConfig.get('translateClickingOnce') === 'yes' ? '' :
     twpConfig.get('useOldPopup') === 'yes' ? 'popup/old-popup.html' : 'popup/popup.html';
   const queries = new Set(['getOriginalTabLanguage', 'getCurrentPageLanguage',
-    'getCurrentPageLanguageState', 'getCurrentPageTranslatorService']);
+    'getCurrentPageLanguageState', 'getCurrentPageTranslatorService', 'getTranslationDisplayMode']);
   let assetsPromise;
   // A late reply must not overwrite a newer document's ready notification.
   const checks = new Map();
@@ -73,6 +73,7 @@
       if (command?.action === 'translatePage' && typeof command.targetLanguage === 'string' &&
           command.targetLanguage.length < 32) {
         payload = { action: 'translatePage', targetLanguage: command.targetLanguage };
+        if (['translation', 'bilingual'].includes(command.displayMode)) payload.displayMode = command.displayMode;
       } else if (command?.action === 'restorePage') payload = { action: 'restorePage' };
       else if (command?.action === 'swapTranslationService' && ['google', 'bing', 'yandex'].includes(command.newServiceName)) {
         payload = { action: 'swapTranslationService', newServiceName: command.newServiceName };

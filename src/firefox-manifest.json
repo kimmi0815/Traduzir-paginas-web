@@ -97,12 +97,12 @@
   },
   "action": {
     "browser_style": false,
-    "default_icon": "/icons/icon-32.png",
+    "default_icon": {"16": "/icons/icon-16.png", "32": "/icons/icon-32.png", "48": "/icons/icon-48.png"},
     "default_title": "__MSG_pageActionTitle__"
   },
   "page_action": {
     "browser_style": false,
-    "default_icon": "/icons/icon-32.png",
+    "default_icon": {"16": "/icons/icon-16.png", "32": "/icons/icon-32.png", "48": "/icons/icon-48.png"},
     "default_title": "__MSG_pageActionTitle__"
   },
   "content_scripts": [
@@ -133,6 +133,7 @@
       "js": [
         "/lib/i18n.js",
         "/contentScript/showOriginal.js",
+        "/contentScript/bilingual.js",
         "/contentScript/pageTranslator.js",
         "/contentScript/translateSelected.js",
         "/contentScript/showTranslated.js"

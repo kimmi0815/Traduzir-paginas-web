@@ -12,6 +12,7 @@
   if (params.has('service')) config.pageTranslatorService = params.get('service');
   if (params.has('theme')) config.darkMode = params.get('theme') === 'dark' ? 'yes' : 'no';
   let state = params.get('state') || 'original';
+  let displayMode = config.translationDisplayMode || 'translation';
   let pageLanguage = state === 'translated' ? config.targetLanguage : 'en';
   let service = config.pageTranslatorService || 'google';
   let version = 0;
@@ -57,13 +58,14 @@
       create:({url},callback)=>{log({opened:url});if(callback)callback(fakeTab)},
       sendMessage:(id,payload,options,callback)=>{
         if(typeof options==='function') {callback=options; options=undefined;}
-        const responses={getOriginalTabLanguage:params.get('source')||'en',getCurrentPageLanguage:pageLanguage,getCurrentPageLanguageState:state,getCurrentPageTranslatorService:service};
+        const responses={getOriginalTabLanguage:params.get('source')||'en',getCurrentPageLanguage:pageLanguage,getCurrentPageLanguageState:state,getCurrentPageTranslatorService:service,getTranslationDisplayMode:displayMode};
         if(payload.action.startsWith('get')) {
           const delay=payload.action==='getOriginalTabLanguage'?Number(params.get('sourceDelay')||0):0;
           setTimeout(()=>callback?.(state==='unavailable'?undefined:responses[payload.action]),delay);return;
         }
         log({action:payload.action,...payload,frameId:options?.frameId??'all'});
         if(payload.action==='translatePage'){
+          displayMode=payload.displayMode || config.translationDisplayMode || 'translation';
           state='translating';pageLanguage=payload.targetLanguage;const current=++version;
           setTimeout(()=>{if(current===version)state=params.get('fail')==='yes'?'error':'translated'},800);
         }

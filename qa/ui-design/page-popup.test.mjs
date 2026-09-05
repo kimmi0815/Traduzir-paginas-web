@@ -211,3 +211,14 @@ test('closing a tab cancels recovery and ignores outstanding replies', () => {
   reply(true);
   assert.equal(bg.popups.length, count);
 });
+
+test('bilingual mode passes through only validated display modes to the sender tab', () => {
+  const bg = background({enableIframePageTranslation:'no'});
+  bg.message({action:'compactPagePopupCommand', command:{action:'translatePage',targetLanguage:'ja',displayMode:'bilingual'}});
+  assert.deepEqual(JSON.parse(JSON.stringify(bg.sent[0].payload)), {action:'translatePage',targetLanguage:'ja',displayMode:'bilingual'});
+  assert.equal(bg.sent[0].options.frameId,0);
+  bg.message({action:'compactPagePopupCommand', command:{action:'translatePage',targetLanguage:'ja',displayMode:'invalid'}});
+  assert.equal(bg.sent[1].payload.displayMode,undefined);
+  bg.message({action:'compactPagePopupQuery',query:'getTranslationDisplayMode'});
+  assert.equal(bg.sent[2].payload.action,'getTranslationDisplayMode');
+});

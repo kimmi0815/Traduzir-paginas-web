@@ -403,6 +403,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   let dontSortResults =
     twpConfig.get("dontSortResults") == "yes" ? true : false;
 
+  let currentDisplayMode = "translation";
   let fooCount = 0;
 
   let originalPageTitle;
@@ -423,6 +424,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   let firstPendingMutationAt = 0;
 
   function rememberPiece(piece) {
+    if (currentDisplayMode === "bilingual") twpBilingual.prepare(piece.nodes);
     piece.nodes.forEach((node) => knownTextNodes.add(node));
   }
 
@@ -960,6 +962,8 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   }
 
   function translateTextContent(node, parentNode, text, toRestore) {
+    if (toRestore.generation !== fooCount || pageLanguageState !== "translated") return;
+    if (currentDisplayMode === "bilingual") twpBilingual.show(node, originalTabLanguage);
     toRestore.translatedText = text;
 
     if (location.hostname === "pdf.translatewebpages.org") {
@@ -1009,12 +1013,13 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
             const originalTextNode = nodes[j];
             const parentNode = nodes[j].parentNode;
-            if (showOriginal.isEnabled) {
+            if (showOriginal.isEnabled && currentDisplayMode !== "bilingual") {
               nodes[j] = encapsulateTextNode(nodes[j]);
               showOriginal.add(nodes[j]);
             }
 
             const toRestore = {
+              generation: fooCount,
               node: nodes[j],
               original: originalTextNode,
               originalText: originalTextNode.textContent,
@@ -1051,12 +1056,13 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
             const originalTextNode = nodes[j];
             const parentNode = nodes[j].parentNode;
-            if (showOriginal.isEnabled) {
+            if (showOriginal.isEnabled && currentDisplayMode !== "bilingual") {
               nodes[j] = encapsulateTextNode(nodes[j]);
               showOriginal.add(nodes[j]);
             }
 
             const toRestore = {
+              generation: fooCount,
               node: nodes[j],
               original: originalTextNode,
               originalText: originalTextNode.textContent,
@@ -1906,9 +1912,10 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     pageLanguageStateObservers.push(callback);
   };
 
-  pageTranslator.translatePage = function (targetLanguage) {
+  pageTranslator.translatePage = function (targetLanguage, displayMode) {
     fooCount++;
     pageTranslator.restorePage();
+    currentDisplayMode = (displayMode || twpConfig.get("translationDisplayMode")) === "bilingual" ? "bilingual" : "translation";
     showOriginal.enable();
     chrome.runtime.sendMessage(
       { action: "removeTranslationsWithError" },
@@ -1963,6 +1970,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
     showOriginal.disable();
     disableMutatinObserver();
+    twpBilingual.clear();
 
     pageLanguageState = "original";
     chrome.runtime.sendMessage(
@@ -2039,7 +2047,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       if (request.targetLanguage === "original") {
         pageTranslator.restorePage();
       } else {
-        pageTranslator.translatePage(request.targetLanguage);
+        pageTranslator.translatePage(request.targetLanguage, request.displayMode);
       }
     } else if (request.action === "restorePage") {
       pageTranslator.restorePage();
@@ -2050,6 +2058,8 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       return true;
     } else if (request.action === "getCurrentPageLanguage") {
       sendResponse(currentPageLanguage);
+    } else if (request.action === "getTranslationDisplayMode") {
+      sendResponse(currentDisplayMode);
     } else if (request.action === "getCurrentPageLanguageState") {
       sendResponse(pageLanguageState);
     } else if (request.action === "getCurrentPageTranslatorService") {

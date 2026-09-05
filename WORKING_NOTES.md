@@ -98,3 +98,15 @@ git remote add upstream https://github.com/FilipePS/Traduzir-paginas-web.git
 ```
 
 既に同名のリモートがある場合は追加不要。通常の作業は `origin/chrome-mv3` へプッシュし、上流へのプッシュは行わない。
+
+## アイコン（2026-09-05）
+
+比較案6の枠なし「左下A・右上文」を採用。通常はグレー、翻訳済みは青と下線。既存の `popupBlueWhenSiteIsTranslated` 設定に従う。SVG原本は `src/icons/icon.svg` と `icon-translated.svg`。PNGを再生成する場合は sharp を利用できる環境で `node scripts/render-icons.cjs` を実行する。16/32/48pxをツールバーに提供。比較案は `qa/ui-design/icon-study/` に保存。Aside実機の新アイコン確認は拡張機能とページの再読み込み後に行う。
+
+## 対訳モード（2026-09-06）
+
+コンパクトポップアップの「⋮ → 対訳モード（原文 → 訳文）」で切り替える。選択は `translationDisplayMode` に保存し、次回の翻訳でも使用する。「原文」タブでは追加表示も削除する。通常の翻訳処理・プロバイダ・辞書・分割・先読みは共通。
+
+`src/contentScript/bilingual.js` が段落・見出し・リスト項目・表セルなどの原文を記録し、訳文の前に原文テキストを表示する。原文側にIDや操作部品を複製せず、元DOMのリンクやイベントは訳文側に保持する。子段落を持つ外側のコンテナ、ナビゲーションや編集領域は対訳の重複対象外。サイト固有の固定高・特殊レイアウトとAside実機での読み心地は追加確認が必要。
+
+検証: `node --test qa/ui-design/page-popup.test.mjs`。Chromium統合検証はPlaywrightを解決できる環境で `node --test qa/ui-design/bilingual.test.cjs`。必要に応じて `NODE_PATH` と `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を指定。翻訳APIは固定応答に置換し、実際のページ翻訳処理で順序・リンク保持・動的追記・復元・遅延応答の無効化、および実ポップアップのモード切り替えを確認する。外部サービスの翻訳品質を測るテストではない。
