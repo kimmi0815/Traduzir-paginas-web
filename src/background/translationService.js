@@ -467,6 +467,15 @@ const translationService = (function () {
    */
 
   /** @typedef {"complete" | "translating" | "error"} TranslationStatus */
+  /** @typedef {0 | 1 | 2} TranslationPriority */
+
+  const maxConcurrentTranslationRequests = 6;
+  const maxNonUrgentTranslationRequests = 4;
+  const maxBackgroundTranslationRequests = 4;
+
+  function normalizeTranslationPriority(priority) {
+    return priority === 1 || priority === 2 ? priority : 0;
+  }
   /**
    * @typedef {Object} TranslationInfo
    * @property {String} originalText
@@ -513,6 +522,11 @@ const translationService = (function () {
       this.cbGetRequestBody = cbGetRequestBody;
       this.cbGetExtraHeaders = cbGetExtraHeaders;
 
+      this.requestQueues = [[], [], []];
+      this.activeRequestCount = 0;
+      this.activeRequestsByPriority = [0, 0, 0];
+      this.requestSchedulerDiagnostics = this.createRequestSchedulerDiagnostics();
+
       /**
        * @type {Map<string, TranslationInfo>}
        *
@@ -520,6 +534,123 @@ const translationService = (function () {
        * Ensures that two identical requests share the same `XMLHttpRequestShim`.
        * */
       this.translationsInProgress = new Map();
+    }
+
+    createRequestSchedulerDiagnostics() {
+      return {
+        maxActive: 0,
+        maxNonUrgent: 0,
+        maxBackground: 0,
+        startedByPriority: [0, 0, 0],
+        completedByPriority: [0, 0, 0],
+        responseStatusCounts: {},
+      };
+    }
+
+    resetRequestSchedulerDiagnostics() {
+      this.requestSchedulerDiagnostics = this.createRequestSchedulerDiagnostics();
+    }
+
+    getRequestSchedulerDiagnostics() {
+      const diagnostics = this.requestSchedulerDiagnostics;
+      return {
+        serviceName: this.serviceName,
+        limits: {
+          total: maxConcurrentTranslationRequests,
+          nonUrgent: maxNonUrgentTranslationRequests,
+          background: maxBackgroundTranslationRequests,
+        },
+        active: this.activeRequestCount,
+        activeByPriority: [...this.activeRequestsByPriority],
+        queuedByPriority: this.requestQueues.map((queue) => queue.length),
+        maxActive: diagnostics.maxActive,
+        maxNonUrgent: diagnostics.maxNonUrgent,
+        maxBackground: diagnostics.maxBackground,
+        startedByPriority: [...diagnostics.startedByPriority],
+        completedByPriority: [...diagnostics.completedByPriority],
+        responseStatusCounts: { ...diagnostics.responseStatusCounts },
+      };
+    }
+
+    canStartRequest(priority) {
+      if (this.activeRequestCount >= maxConcurrentTranslationRequests) {
+        return false;
+      }
+      if (priority === 0) return true;
+
+      const activeNonUrgent =
+        this.activeRequestsByPriority[1] + this.activeRequestsByPriority[2];
+      if (activeNonUrgent >= maxNonUrgentTranslationRequests) return false;
+      if (
+        priority === 2 &&
+        this.activeRequestsByPriority[2] >= maxBackgroundTranslationRequests
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    nextQueuedRequestPriority() {
+      for (let priority = 0; priority < this.requestQueues.length; priority++) {
+        if (
+          this.requestQueues[priority].length > 0 &&
+          this.canStartRequest(priority)
+        ) {
+          return priority;
+        }
+      }
+      return null;
+    }
+
+    drainRequestQueue() {
+      let priority = this.nextQueuedRequestPriority();
+      while (priority !== null) {
+        const requestPriority = priority;
+        const queuedRequest = this.requestQueues[requestPriority].shift();
+        this.activeRequestCount++;
+        this.activeRequestsByPriority[requestPriority]++;
+
+        const diagnostics = this.requestSchedulerDiagnostics;
+        diagnostics.startedByPriority[requestPriority]++;
+        diagnostics.maxActive = Math.max(
+          diagnostics.maxActive,
+          this.activeRequestCount,
+        );
+        diagnostics.maxNonUrgent = Math.max(
+          diagnostics.maxNonUrgent,
+          this.activeRequestsByPriority[1] +
+            this.activeRequestsByPriority[2],
+        );
+        diagnostics.maxBackground = Math.max(
+          diagnostics.maxBackground,
+          this.activeRequestsByPriority[2],
+        );
+
+        Promise.resolve()
+          .then(queuedRequest.run)
+          .then(queuedRequest.resolve, queuedRequest.reject)
+          .finally(() => {
+            this.activeRequestCount = Math.max(0, this.activeRequestCount - 1);
+            this.activeRequestsByPriority[requestPriority] = Math.max(
+              0,
+              this.activeRequestsByPriority[requestPriority] - 1,
+            );
+            this.requestSchedulerDiagnostics.completedByPriority[
+              requestPriority
+            ]++;
+            this.drainRequestQueue();
+          });
+
+        priority = this.nextQueuedRequestPriority();
+      }
+    }
+
+    enqueueRequest(priority, run) {
+      const normalizedPriority = normalizeTranslationPriority(priority);
+      return new Promise((resolve, reject) => {
+        this.requestQueues[normalizedPriority].push({ run, resolve, reject });
+        this.drainRequestQueue();
+      });
     }
 
     /**
@@ -665,6 +796,10 @@ const translationService = (function () {
         xhr.responseType = "json";
 
         xhr.onload = (event) => {
+          const status = String(xhr.status || 0);
+          const statusCounts =
+            this.requestSchedulerDiagnostics.responseStatusCounts;
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
           resolve(xhr.response);
         };
 
@@ -672,6 +807,10 @@ const translationService = (function () {
           xhr.onabort =
           xhr.ontimeout =
             (event) => {
+              const status = String(xhr.status || 0);
+              const statusCounts =
+                this.requestSchedulerDiagnostics.responseStatusCounts;
+              statusCounts[status] = (statusCounts[status] || 0) + 1;
               console.error(event);
               reject();
             };
@@ -703,6 +842,7 @@ const translationService = (function () {
       sourceArray2d,
       dontSaveInPersistentCache = false,
       dontSortResults = false,
+      translationPriority = 0,
     ) {
       const [requests, currentTranslationsInProgress] = await this.getRequests(
         sourceLanguage,
@@ -714,7 +854,9 @@ const translationService = (function () {
 
       for (const request of requests) {
         promises.push(
-          this.makeRequest(sourceLanguage, targetLanguage, request)
+          this.enqueueRequest(translationPriority, () =>
+            this.makeRequest(sourceLanguage, targetLanguage, request),
+          )
             .then((response) => {
               const results = this.cbParseResponse(response);
               for (const idx in request) {
@@ -1002,6 +1144,7 @@ const translationService = (function () {
       sourceArray2d,
       dontSaveInPersistentCache,
       dontSortResults = false,
+      translationPriority = 0,
     ) {
       /** @type {{search: string, replace: string}[]} */
       const replacements = [
@@ -1032,6 +1175,7 @@ const translationService = (function () {
         sourceArray2d,
         dontSaveInPersistentCache,
         dontSortResults,
+        translationPriority,
       );
     }
   })();
@@ -1095,6 +1239,7 @@ const translationService = (function () {
       sourceArray2d,
       dontSaveInPersistentCache,
       dontSortResults = false,
+      translationPriority = 0,
     ) {
       await YandexHelper.findSID();
       if (!YandexHelper.translateSid) return;
@@ -1141,6 +1286,7 @@ const translationService = (function () {
         sourceArray2d,
         dontSaveInPersistentCache,
         dontSortResults,
+        translationPriority,
       );
     }
   })();
@@ -1229,6 +1375,7 @@ const translationService = (function () {
       sourceArray2d,
       dontSaveInPersistentCache,
       dontSortResults = false,
+      translationPriority = 0,
     ) {
       /** @type {{search: string, replace: string}[]} */
       const replacements = [
@@ -1299,6 +1446,7 @@ const translationService = (function () {
         sourceArray2d,
         dontSaveInPersistentCache,
         dontSortResults,
+        translationPriority,
       );
     }
   })();
@@ -1366,6 +1514,7 @@ const translationService = (function () {
       sourceArray2d,
       dontSaveInPersistentCache,
       dontSortResults = false,
+      translationPriority = 0,
     ) {
       if (targetLanguage === "en") {
         targetLanguage = "en-US";
@@ -1387,6 +1536,7 @@ const translationService = (function () {
         sourceArray2d,
         dontSaveInPersistentCache,
         dontSortResults,
+        translationPriority,
       );
     }
   })();
@@ -1559,6 +1709,17 @@ const translationService = (function () {
     /** @type {Service} */ /** @type {?} */ (deeplService),
   );
 
+  translationService.resetRequestSchedulerDiagnostics = () => {
+    serviceList.forEach((service) =>
+      service.resetRequestSchedulerDiagnostics()
+    );
+  };
+
+  translationService.getRequestSchedulerDiagnostics = () =>
+    [...serviceList.values()].map((service) =>
+      service.getRequestSchedulerDiagnostics()
+    );
+
   /**
    * Get translation service from your name
    * Make sure the service is enabled
@@ -1583,6 +1744,7 @@ const translationService = (function () {
     sourceArray2d,
     dontSaveInPersistentCache = false,
     dontSortResults = false,
+    translationPriority = 0,
   ) => {
     serviceName = twpLang.getAlternativeService(
       targetLanguage,
@@ -1596,6 +1758,7 @@ const translationService = (function () {
       sourceArray2d,
       dontSaveInPersistentCache,
       dontSortResults,
+      translationPriority,
     );
   };
 
@@ -1605,6 +1768,7 @@ const translationService = (function () {
     targetLanguage,
     sourceArray,
     dontSaveInPersistentCache = false,
+    translationPriority = 0,
   ) => {
     serviceName = twpLang.getAlternativeService(
       targetLanguage,
@@ -1618,6 +1782,8 @@ const translationService = (function () {
         targetLanguage,
         sourceArray.map((text) => [text]),
         dontSaveInPersistentCache,
+        false,
+        translationPriority,
       )
     ).map((result) => result[0]);
   };
@@ -1628,6 +1794,7 @@ const translationService = (function () {
     targetLanguage,
     originalText,
     dontSaveInPersistentCache = false,
+    translationPriority = 0,
   ) => {
     serviceName = twpLang.getAlternativeService(
       targetLanguage,
@@ -1641,6 +1808,8 @@ const translationService = (function () {
         targetLanguage,
         [[originalText]],
         dontSaveInPersistentCache,
+        false,
+        translationPriority,
       )
     )[0][0];
   };
@@ -1663,6 +1832,7 @@ const translationService = (function () {
           request.sourceArray2d,
           dontSaveInPersistentCache,
           request.dontSortResults,
+          request.translationPriority,
         )
         .then((results) => sendResponse(results))
         .catch((e) => {
@@ -1679,6 +1849,7 @@ const translationService = (function () {
           request.targetLanguage,
           request.sourceArray,
           dontSaveInPersistentCache,
+          request.translationPriority,
         )
         .then((results) => sendResponse(results))
         .catch((e) => {
@@ -1695,6 +1866,7 @@ const translationService = (function () {
           request.targetLanguage,
           request.source,
           dontSaveInPersistentCache,
+          request.translationPriority,
         )
         .then((results) => sendResponse(results))
         .catch((e) => {

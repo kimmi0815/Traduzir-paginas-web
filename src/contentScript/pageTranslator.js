@@ -120,7 +120,8 @@ async function handleCustomWords(
   customDictionary,
   currentPageTranslatorService,
   currentSourceLanguage,
-  currentTargetLanguage
+  currentTargetLanguage,
+  translationPriority = 0
 ) {
   try {
     if (customDictionary.size > 0 && currentPageTranslatorService !== "bing") {
@@ -169,7 +170,8 @@ async function handleCustomWords(
       currentPageTranslatorService,
       currentSourceLanguage,
       currentTargetLanguage,
-      originalText
+      originalText,
+      translationPriority
     );
   }
 
@@ -246,7 +248,8 @@ function backgroundTranslateHTML(
   sourceLanguage,
   targetLanguage,
   sourceArray2d,
-  dontSortResults
+  dontSortResults,
+  translationPriority = 0
 ) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(
@@ -257,6 +260,7 @@ function backgroundTranslateHTML(
         targetLanguage,
         sourceArray2d,
         dontSortResults,
+        translationPriority,
       },
       (response) => {
         checkedLastError();
@@ -270,7 +274,8 @@ function backgroundTranslateText(
   translationService,
   sourceLanguage,
   targetLanguage,
-  sourceArray
+  sourceArray,
+  translationPriority = 0
 ) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(
@@ -280,6 +285,7 @@ function backgroundTranslateText(
         sourceLanguage,
         targetLanguage,
         sourceArray,
+        translationPriority,
       },
       (response) => {
         checkedLastError();
@@ -293,7 +299,8 @@ function backgroundTranslateSingleText(
   translationService,
   sourceLanguage,
   targetLanguage,
-  source
+  source,
+  translationPriority = 0
 ) {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(
@@ -303,6 +310,7 @@ function backgroundTranslateSingleText(
         sourceLanguage,
         targetLanguage,
         source,
+        translationPriority,
       },
       (response) => {
         checkedLastError();
@@ -436,12 +444,44 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     if (!pageIsVisible || pageLanguageState !== "translated") return;
 
     const now = performance.now();
+    if (translationScheduler.active) {
+      translationScheduler.lastActivityAt = now;
+    }
     if (!firstPendingMutationAt) firstPendingMutationAt = now;
     clearTimeout(translateNewNodesTimerHandler);
 
     const elapsed = now - firstPendingMutationAt;
     const wait = Math.max(0, Math.min(mutationDebounceMs, mutationMaxWaitMs - elapsed));
     translateNewNodesTimerHandler = setTimeout(translateNewNodes, wait);
+  }
+
+  function collapseTranslationRoots(roots, removedRoots) {
+    const collapsedRoots = [];
+    roots.forEach((root) => {
+      if (!root || root.nodeType !== 1 || !root.isConnected) return;
+      if (
+        removedRoots.some(
+          (removedRoot) =>
+            removedRoot === root ||
+            (removedRoot && removedRoot.contains && removedRoot.contains(root))
+        )
+      ) {
+        return;
+      }
+      if (
+        collapsedRoots.some(
+          (existingRoot) =>
+            existingRoot === root || existingRoot.contains(root)
+        )
+      ) {
+        return;
+      }
+      for (let index = collapsedRoots.length - 1; index >= 0; index--) {
+        if (root.contains(collapsedRoots[index])) collapsedRoots.splice(index, 1);
+      }
+      collapsedRoots.push(root);
+    });
+    return collapsedRoots;
   }
 
   function translateNewNodes() {
@@ -455,17 +495,13 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     const rootsRemovedBeforeTranslation = removedNodes;
     newNodes = [];
     removedNodes = [];
+    const registeredItems = [];
 
     try {
-      rootsToTranslate.forEach((nn) => {
-        if (
-          rootsRemovedBeforeTranslation.indexOf(nn) != -1 ||
-          !nn ||
-          !nn.isConnected
-        ) {
-          return;
-        }
-
+      collapseTranslationRoots(
+        rootsToTranslate,
+        rootsRemovedBeforeTranslation
+      ).forEach((nn) => {
         let newPiecesToTranslate = getPiecesToTranslate(nn);
 
         for (const i in newPiecesToTranslate) {
@@ -478,7 +514,8 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
           rememberPiece(piece);
           piecesToTranslate.push(piece);
-          registerTranslationSchedulerItem("piece", piece);
+          const item = registerTranslationSchedulerItem("piece", piece);
+          if (item) registeredItems.push(item);
         }
 
         const attributeRoot = nn.nodeType === 1 ? nn : nn.parentElement;
@@ -488,7 +525,11 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
             if (isKnownAttribute(attribute)) return;
             rememberAttribute(attribute);
             attributesToTranslate.push(attribute);
-            registerTranslationSchedulerItem("attribute", attribute);
+            const item = registerTranslationSchedulerItem(
+              "attribute",
+              attribute
+            );
+            if (item) registeredItems.push(item);
           });
         }
       });
@@ -496,7 +537,11 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       console.error(e);
     }
 
-    refreshTranslationPriorities();
+    const rectCache = new Map();
+    registeredItems.forEach((item) =>
+      classifySchedulerItem(item, rectCache)
+    );
+    refreshTranslationPriorities(rectCache);
     requestTranslationSchedulerDrain();
   }
 
@@ -945,7 +990,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     }
   }
 
-  function translateResults(piecesToTranslateNow, results) {
+  function translateResults(piecesToTranslateNow, results, translationPriority = 0) {
     if (dontSortResults) {
       for (let i = 0; i < results.length; i++) {
         for (let j = 0; j < results[i].length; j++) {
@@ -986,7 +1031,8 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
               customDictionary,
               currentPageTranslatorService,
               currentSourceLanguage,
-              currentTargetLanguage
+              currentTargetLanguage,
+              translationPriority
             ).then((results) => {
               // results = `${originalText.match(/^\s*/)[0]}${results.trim()}${
               //   originalText.match(/\s*$/)[0]
@@ -1026,7 +1072,8 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
               customDictionary,
               currentPageTranslatorService,
               currentSourceLanguage,
-              currentTargetLanguage
+              currentTargetLanguage,
+              translationPriority
             ).then((results) => {
               // results = `${originalText.match(/^\s*/)[0]}${results.trim()}${
               //   originalText.match(/\s*$/)[0]
@@ -1054,20 +1101,100 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     behindViewports: 1,
     broadObserverViewports: 6,
     fastScrollViewportsPerSecond: 1,
+    urgentCharacterBudget: 3200,
     aheadCharacterBudget: 3200,
     backgroundCharacterBudget: 1600,
+    maxItemsPerCohort: 20,
     maxUrgentRequests: 2,
     maxAheadRequests: 2,
-    maxBackgroundRequests: 1,
+    maxBackgroundRequestsWhileActive: 1,
+    maxBackgroundRequestsWhileIdle: 2,
+    backgroundTurboDelayMs: 400,
     backgroundIdleTimeoutMs: 250,
     backgroundFallbackDelayMs: 50,
   };
+
+  class StableMinHeap {
+    constructor() {
+      this.entries = [];
+    }
+
+    get size() {
+      return this.entries.length;
+    }
+
+    isBefore(entryA, entryB) {
+      return (
+        entryA.sortKey < entryB.sortKey ||
+        (entryA.sortKey === entryB.sortKey && entryA.order < entryB.order) ||
+        (entryA.sortKey === entryB.sortKey &&
+          entryA.order === entryB.order &&
+          entryA.sequence < entryB.sequence)
+      );
+    }
+
+    peek() {
+      return this.entries[0];
+    }
+
+    push(entry) {
+      let index = this.entries.push(entry) - 1;
+      while (index > 0) {
+        const parentIndex = Math.floor((index - 1) / 2);
+        if (!this.isBefore(this.entries[index], this.entries[parentIndex])) break;
+        [this.entries[index], this.entries[parentIndex]] = [
+          this.entries[parentIndex],
+          this.entries[index],
+        ];
+        index = parentIndex;
+      }
+    }
+
+    pop() {
+      if (this.entries.length === 0) return null;
+      const first = this.entries[0];
+      const last = this.entries.pop();
+      if (this.entries.length > 0) {
+        this.entries[0] = last;
+        let index = 0;
+        while (true) {
+          const leftIndex = index * 2 + 1;
+          const rightIndex = leftIndex + 1;
+          let nextIndex = index;
+          if (
+            leftIndex < this.entries.length &&
+            this.isBefore(this.entries[leftIndex], this.entries[nextIndex])
+          ) {
+            nextIndex = leftIndex;
+          }
+          if (
+            rightIndex < this.entries.length &&
+            this.isBefore(this.entries[rightIndex], this.entries[nextIndex])
+          ) {
+            nextIndex = rightIndex;
+          }
+          if (nextIndex === index) break;
+          [this.entries[index], this.entries[nextIndex]] = [
+            this.entries[nextIndex],
+            this.entries[index],
+          ];
+          index = nextIndex;
+        }
+      }
+      return first;
+    }
+  }
+
+  function createSchedulerQueues() {
+    return [new StableMinHeap(), new StableMinHeap(), new StableMinHeap()];
+  }
 
   const translationScheduler = {
     active: false,
     generation: 0,
     nextOrder: 0,
-    queues: [new Set(), new Set(), new Set()],
+    nextQueueSequence: 0,
+    queues: createSchedulerQueues(),
     items: new Set(),
     nearItems: new Set(),
     observedElements: new Set(),
@@ -1082,6 +1209,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     lastScrollAt: performance.now(),
     scrollVelocity: 0,
     scrollDirection: 1,
+    lastActivityAt: performance.now(),
   };
 
   function getSchedulerItemElements(item) {
@@ -1103,17 +1231,29 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     return elements;
   }
 
-  function getSchedulerItemRect(item) {
-    const elements = getSchedulerItemElements(item).filter(
+  function getSchedulerItemRect(item, rectCache = new Map()) {
+    if (rectCache.has(item)) return rectCache.get(item);
+
+    const elements = item.elements.filter(
       (element) => element && element.isConnected
     );
-    if (elements.length === 0) return null;
+    if (elements.length === 0) {
+      rectCache.set(item, null);
+      return null;
+    }
 
-    const rects = elements.map((element) => element.getBoundingClientRect());
-    return {
+    const rects = elements.map((element) => {
+      if (!rectCache.has(element)) {
+        rectCache.set(element, element.getBoundingClientRect());
+      }
+      return rectCache.get(element);
+    });
+    const rect = {
       top: Math.min(...rects.map((rect) => rect.top)),
       bottom: Math.max(...rects.map((rect) => rect.bottom)),
     };
+    rectCache.set(item, rect);
+    return rect;
   }
 
   function isSchedulerItemConnected(item) {
@@ -1129,15 +1269,32 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     );
   }
 
-  function removeSchedulerItemFromQueues(item) {
-    translationScheduler.queues.forEach((queue) => queue.delete(item));
+  function invalidateSchedulerQueueEntry(item) {
+    item.queueVersion++;
+    item.queued = false;
   }
 
-  function setSchedulerItemPriority(item, priority) {
+  function setSchedulerItemPriority(item, priority, sortKey = item.order, force = false) {
     if (item.state !== "pending") return;
-    removeSchedulerItemFromQueues(item);
+    if (
+      !force &&
+      item.queued &&
+      item.priority === priority &&
+      item.queueSortKey === sortKey
+    ) {
+      return;
+    }
+    invalidateSchedulerQueueEntry(item);
     item.priority = priority;
-    translationScheduler.queues[priority].add(item);
+    item.queueSortKey = sortKey;
+    item.queued = true;
+    translationScheduler.queues[priority].push({
+      item,
+      version: item.queueVersion,
+      sortKey,
+      order: item.order,
+      sequence: translationScheduler.nextQueueSequence++,
+    });
   }
 
   function unobserveSchedulerItem(item) {
@@ -1150,6 +1307,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
           translationScheduler.observer.unobserve(element);
         }
         translationScheduler.observedElements.delete(element);
+        translationScheduler.observedElementItems.delete(element);
       }
     });
     item.intersectingElements.clear();
@@ -1158,8 +1316,9 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
   function finishSchedulerItem(item, state) {
     item.state = state;
-    removeSchedulerItemFromQueues(item);
+    invalidateSchedulerQueueEntry(item);
     unobserveSchedulerItem(item);
+    translationScheduler.items.delete(item);
   }
 
   function observeSchedulerItem(item) {
@@ -1178,32 +1337,34 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   }
 
   function registerTranslationSchedulerItem(kind, value) {
-    if (!translationScheduler.active) return;
+    if (!translationScheduler.active) return null;
 
     const item = {
       kind,
       value,
       order: translationScheduler.nextOrder++,
-      priority: 2,
+      priority: null,
       state: "pending",
-      elements: [],
+      elements: null,
       intersectingElements: new Set(),
+      queueVersion: 0,
+      queueSortKey: 0,
+      queued: false,
     };
     item.elements = getSchedulerItemElements(item);
     translationScheduler.items.add(item);
-    translationScheduler.queues[2].add(item);
     observeSchedulerItem(item);
-    classifySchedulerItem(item);
+    return item;
   }
 
-  function classifySchedulerItem(item) {
+  function classifySchedulerItem(item, rectCache = new Map()) {
     if (item.state !== "pending") return;
     if (!isSchedulerItemConnected(item)) {
       finishSchedulerItem(item, "cancelled");
       return;
     }
 
-    const rect = getSchedulerItemRect(item);
+    const rect = getSchedulerItemRect(item, rectCache);
     if (!rect) {
       setSchedulerItemPriority(item, 2);
       return;
@@ -1239,12 +1400,32 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
         rect.top > viewportHeight && rect.top <= viewportHeight + behindDistance;
     }
 
-    setSchedulerItemPriority(item, isAhead || isBehind ? 1 : 2);
+    if (isAhead || isBehind) {
+      let distance;
+      if (isAhead) {
+        distance =
+          translationScheduler.scrollDirection >= 0
+            ? Math.max(0, rect.top - viewportHeight)
+            : Math.max(0, -rect.bottom);
+      } else {
+        distance =
+          aheadDistance +
+          (translationScheduler.scrollDirection >= 0
+            ? Math.max(0, -rect.bottom)
+            : Math.max(0, rect.top - viewportHeight));
+      }
+      setSchedulerItemPriority(item, 1, distance);
+      return;
+    }
+    setSchedulerItemPriority(item, 2);
   }
 
-  function refreshTranslationPriorities() {
+  function refreshTranslationPriorities(
+    rectCache = new Map(),
+    items = translationScheduler.nearItems
+  ) {
     if (!translationScheduler.active) return;
-    translationScheduler.nearItems.forEach(classifySchedulerItem);
+    items.forEach((item) => classifySchedulerItem(item, rectCache));
   }
 
   function rebuildTranslationIntersectionObserver() {
@@ -1260,6 +1441,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       translationSchedulerConfig.broadObserverViewports * window.innerHeight;
     translationScheduler.observer = new IntersectionObserver(
       (entries) => {
+        const itemsToClassify = new Set();
         entries.forEach((entry) => {
           const items =
             translationScheduler.observedElementItems.get(entry.target);
@@ -1275,13 +1457,17 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
             if (item.intersectingElements.size > 0) {
               translationScheduler.nearItems.add(item);
-              classifySchedulerItem(item);
+              itemsToClassify.add(item);
             } else {
               translationScheduler.nearItems.delete(item);
               setSchedulerItemPriority(item, 2);
             }
           });
         });
+        const rectCache = new Map();
+        itemsToClassify.forEach((item) =>
+          classifySchedulerItem(item, rectCache)
+        );
         requestTranslationSchedulerDrain();
       },
       { root: null, rootMargin: `${observerMargin}px 0px` }
@@ -1292,52 +1478,78 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     );
   }
 
-  function schedulerItemDistance(item) {
-    const rect = getSchedulerItemRect(item);
-    if (!rect) return Number.MAX_SAFE_INTEGER;
-    if (translationScheduler.scrollDirection >= 0) {
-      return Math.max(0, rect.top - window.innerHeight);
-    }
-    return Math.max(0, -rect.bottom);
+  function isCurrentSchedulerQueueEntry(entry, priority) {
+    return (
+      entry &&
+      entry.item.state === "pending" &&
+      entry.item.queued &&
+      entry.item.priority === priority &&
+      entry.item.queueVersion === entry.version
+    );
   }
 
-  function takeSchedulerCohort(priority, characterBudget) {
+  function schedulerQueueHasItems(priority) {
     const queue = translationScheduler.queues[priority];
-    const candidates = [...queue].filter(
-      (item) => item.state === "pending" && item.priority === priority
-    );
-    if (priority === 1) {
-      candidates.sort(
-        (itemA, itemB) =>
-          schedulerItemDistance(itemA) - schedulerItemDistance(itemB) ||
-          itemA.order - itemB.order
-      );
-    } else {
-      candidates.sort((itemA, itemB) => itemA.order - itemB.order);
+    while (queue.size > 0) {
+      const entry = queue.peek();
+      if (!isCurrentSchedulerQueueEntry(entry, priority)) {
+        queue.pop();
+        continue;
+      }
+      if (!isSchedulerItemConnected(entry.item)) {
+        queue.pop();
+        entry.item.queued = false;
+        finishSchedulerItem(entry.item, "cancelled");
+        continue;
+      }
+      return true;
     }
+    return false;
+  }
 
-    while (candidates.length > 0 && !isSchedulerItemConnected(candidates[0])) {
-      const disconnectedItem = candidates.shift();
-      finishSchedulerItem(disconnectedItem, "cancelled");
-    }
-    if (candidates.length === 0) return [];
-
-    const kind = candidates[0].kind;
+  function takeSchedulerCohort(priority, characterBudget, itemBudget) {
+    const queue = translationScheduler.queues[priority];
+    const deferredItems = [];
     const cohort = [];
+    let kind = null;
     let cohortLength = 0;
-    for (const item of candidates) {
-      if (item.kind !== kind || !isSchedulerItemConnected(item)) continue;
+    while (queue.size > 0 && cohort.length < itemBudget) {
+      const entry = queue.pop();
+      if (!isCurrentSchedulerQueueEntry(entry, priority)) continue;
+
+      const item = entry.item;
+      item.queued = false;
+      if (!isSchedulerItemConnected(item)) {
+        finishSchedulerItem(item, "cancelled");
+        continue;
+      }
+      if (kind == null) kind = item.kind;
+      if (item.kind !== kind) {
+        deferredItems.push(item);
+        continue;
+      }
+
       const itemLength = getSchedulerItemLength(item);
       if (
         cohort.length > 0 &&
         Number.isFinite(characterBudget) &&
         cohortLength + itemLength > characterBudget
       ) {
+        deferredItems.push(item);
         break;
       }
       cohort.push(item);
       cohortLength += itemLength;
     }
+
+    deferredItems.forEach((item) =>
+      setSchedulerItemPriority(
+        item,
+        priority,
+        item.queueSortKey,
+        true
+      )
+    );
     return cohort;
   }
 
@@ -1360,7 +1572,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       }
 
       if (item.kind === "piece" && Array.isArray(result)) {
-        translateResults([item.value], [result]);
+        translateResults([item.value], [result], item.priority);
       } else if (item.kind === "attribute") {
         translateAttributes([item.value], [result]);
       } else {
@@ -1377,7 +1589,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     items.forEach((item) => {
       item.state = "inFlight";
       item.value.isTranslated = true;
-      removeSchedulerItemFromQueues(item);
+      invalidateSchedulerQueueEntry(item);
     });
     translationScheduler.inFlight[priority]++;
 
@@ -1396,14 +1608,16 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
             )
           )
         ),
-        dontSortResults
+        dontSortResults,
+        priority
       );
     } else {
       request = backgroundTranslateText(
         currentPageTranslatorService,
         currentSourceLanguage,
         currentTargetLanguage,
-        items.map((item) => item.value.original)
+        items.map((item) => item.value.original),
+        priority
       );
     }
 
@@ -1424,9 +1638,18 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       });
   }
 
-  function dispatchSchedulerPriority(priority, maxRequests, characterBudget) {
+  function dispatchSchedulerPriority(
+    priority,
+    maxRequests,
+    characterBudget,
+    itemBudget
+  ) {
     while (translationScheduler.inFlight[priority] < maxRequests) {
-      const cohort = takeSchedulerCohort(priority, characterBudget);
+      const cohort = takeSchedulerCohort(
+        priority,
+        characterBudget,
+        itemBudget
+      );
       if (cohort.length === 0) return;
       dispatchSchedulerCohort(cohort, priority);
     }
@@ -1454,18 +1677,24 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       if (
         !translationScheduler.active ||
         !pageIsVisible ||
-        translationScheduler.queues[0].size > 0 ||
-        translationScheduler.queues[1].size > 0 ||
+        schedulerQueueHasItems(0) ||
+        schedulerQueueHasItems(1) ||
         translationScheduler.inFlight[0] > 0 ||
         translationScheduler.inFlight[1] > 0
       ) {
         requestTranslationSchedulerDrain();
         return;
       }
+      const backgroundMaxRequests =
+        performance.now() - translationScheduler.lastActivityAt >=
+        translationSchedulerConfig.backgroundTurboDelayMs
+          ? translationSchedulerConfig.maxBackgroundRequestsWhileIdle
+          : translationSchedulerConfig.maxBackgroundRequestsWhileActive;
       dispatchSchedulerPriority(
         2,
-        translationSchedulerConfig.maxBackgroundRequests,
-        translationSchedulerConfig.backgroundCharacterBudget
+        backgroundMaxRequests,
+        translationSchedulerConfig.backgroundCharacterBudget,
+        translationSchedulerConfig.maxItemsPerCohort
       );
     };
 
@@ -1497,9 +1726,10 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     dispatchSchedulerPriority(
       0,
       translationSchedulerConfig.maxUrgentRequests,
-      Number.POSITIVE_INFINITY
+      translationSchedulerConfig.urgentCharacterBudget,
+      translationSchedulerConfig.maxItemsPerCohort
     );
-    if (translationScheduler.queues[0].size > 0) {
+    if (schedulerQueueHasItems(0)) {
       cancelBackgroundTranslationDrain();
       return;
     }
@@ -1507,9 +1737,10 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     dispatchSchedulerPriority(
       1,
       translationSchedulerConfig.maxAheadRequests,
-      translationSchedulerConfig.aheadCharacterBudget
+      translationSchedulerConfig.aheadCharacterBudget,
+      translationSchedulerConfig.maxItemsPerCohort
     );
-    if (translationScheduler.queues[1].size > 0) {
+    if (schedulerQueueHasItems(1)) {
       cancelBackgroundTranslationDrain();
       return;
     }
@@ -1547,7 +1778,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       translationScheduler.observer.disconnect();
     }
 
-    translationScheduler.queues = [new Set(), new Set(), new Set()];
+    translationScheduler.queues = createSchedulerQueues();
     translationScheduler.items = new Set();
     translationScheduler.nearItems = new Set();
     translationScheduler.observedElements = new Set();
@@ -1557,6 +1788,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     translationScheduler.drainFrame = null;
     translationScheduler.scrollFrame = null;
     translationScheduler.nextOrder = 0;
+    translationScheduler.nextQueueSequence = 0;
   }
 
   function startTranslationScheduler() {
@@ -1567,6 +1799,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
     translationScheduler.lastScrollAt = performance.now();
     translationScheduler.scrollVelocity = 0;
     translationScheduler.scrollDirection = 1;
+    translationScheduler.lastActivityAt = performance.now();
     knownTextNodes = new WeakSet();
     knownAttributes = new WeakMap();
 
@@ -1582,8 +1815,9 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
 
     const broadDistance =
       translationSchedulerConfig.broadObserverViewports * window.innerHeight;
+    const rectCache = new Map();
     translationScheduler.items.forEach((item) => {
-      const rect = getSchedulerItemRect(item);
+      const rect = getSchedulerItemRect(item, rectCache);
       if (
         rect &&
         rect.bottom >= -broadDistance &&
@@ -1591,7 +1825,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       ) {
         translationScheduler.nearItems.add(item);
       }
-      classifySchedulerItem(item);
+      classifySchedulerItem(item, rectCache);
     });
     requestTranslationSchedulerDrain();
   }
@@ -1612,10 +1846,20 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
         instantaneousVelocity * 0.3;
       if (Math.abs(delta) > 1) {
         translationScheduler.scrollDirection = delta > 0 ? 1 : -1;
+        translationScheduler.lastActivityAt = now;
       }
       translationScheduler.lastScrollY = scrollY;
       translationScheduler.lastScrollAt = now;
-      refreshTranslationPriorities();
+      const rectCache = new Map();
+      if (
+        Math.abs(delta) >
+        translationSchedulerConfig.broadObserverViewports *
+          Math.max(window.innerHeight, 1)
+      ) {
+        refreshTranslationPriorities(rectCache, translationScheduler.items);
+      } else {
+        refreshTranslationPriorities(rectCache);
+      }
       requestTranslationSchedulerDrain();
     });
   }
@@ -1627,7 +1871,7 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
   window.addEventListener("resize", () => {
     if (!translationScheduler.active) return;
     rebuildTranslationIntersectionObserver();
-    refreshTranslationPriorities();
+    refreshTranslationPriorities(new Map(), translationScheduler.items);
     requestTranslationSchedulerDrain();
   });
 
@@ -1647,7 +1891,8 @@ Promise.all([twpConfig.onReady(), getTabHostName()]).then(function (_) {
       currentPageTranslatorService,
       currentSourceLanguage,
       currentTargetLanguage,
-      originalPageTitle
+      originalPageTitle,
+      1
     ).then((result) => {
       if (result) {
         document.title = result;

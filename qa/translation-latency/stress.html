@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+    <title>TWP latency fixture: scheduler stress</title>
+    <link rel="stylesheet" href="fixture.css" />
+    <script src="benchmark.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Scheduler CPU stress fixture</h1>
+      <p>Two thousand elements below intentionally contain identical text.</p>
+    </header>
+    <main id="stress-list"></main>
+    <script>
+      const list = document.getElementById("stress-list");
+      const source =
+        "Repeated text isolates scheduler overhead from translation variety.";
+      const fragment = document.createDocumentFragment();
+      for (let index = 0; index < 2000; index++) {
+        const paragraph = document.createElement("p");
+        paragraph.textContent = source;
+        paragraph.dataset.benchSource = source;
+        paragraph.dataset.benchId = `stress-item-${index + 1}`;
+        fragment.append(paragraph);
+      }
+      list.append(fragment);
+    </script>
+  </body>
+</html>

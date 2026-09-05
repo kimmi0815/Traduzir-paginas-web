@@ -10,10 +10,13 @@
   let currentExposureStartedAt = null;
   let firstVisibleTranslationMs = null;
   let initialViewportCompleteMs = null;
+  let fullDocumentCompleteMs = null;
   let sourceExposureFrames = 0;
   let blankFrames = 0;
   let maxContinuousSourceExposureMs = 0;
   const exposedIds = new Set();
+  let longTasks = [];
+  let longTaskObserver = null;
 
   const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim();
 
@@ -58,6 +61,19 @@
     return { blank, source, visible };
   }
 
+  function allState() {
+    const connected = [...tracked].filter((element) => element.isConnected);
+    const source = connected.filter(
+      (element) =>
+        normalize(currentValue(element)) ===
+        normalize(element.dataset.benchSource)
+    );
+    const blank = connected.filter(
+      (element) => normalize(currentValue(element)).length === 0
+    );
+    return { blank, connected, source };
+  }
+
   function sampleFrame(now) {
     const state = visibleState();
     if (timingActive && state.visible.length > 0) {
@@ -100,12 +116,36 @@
   }).observe(document.documentElement, { childList: true, subtree: true });
   frameHandle = requestAnimationFrame(sampleFrame);
 
+  function startLongTaskObserver() {
+    if (longTaskObserver) longTaskObserver.disconnect();
+    longTasks = [];
+    if (
+      typeof PerformanceObserver !== "function" ||
+      !PerformanceObserver.supportedEntryTypes?.includes("longtask")
+    ) {
+      longTaskObserver = null;
+      return;
+    }
+    longTaskObserver = new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => {
+        if (entry.startTime < timingStartedAt) return;
+        longTasks.push({
+          duration: entry.duration,
+          startTime: entry.startTime - timingStartedAt,
+        });
+      });
+    });
+    longTaskObserver.observe({ type: "longtask", buffered: true });
+  }
+
   window.translationLatencyBenchmark = {
     startTiming() {
       timingActive = true;
       timingStartedAt = performance.now();
       firstVisibleTranslationMs = null;
       initialViewportCompleteMs = null;
+      fullDocumentCompleteMs = null;
+      startLongTaskObserver();
     },
 
     beginExposureSampling() {
@@ -122,12 +162,27 @@
       timingActive = false;
       exposureActive = false;
       currentExposureStartedAt = null;
+      if (longTaskObserver) longTaskObserver.disconnect();
     },
 
     async waitForInitialViewport(timeoutMs = 15000) {
       const deadline = performance.now() + timeoutMs;
       while (performance.now() < deadline) {
         if (visibleState().source.length === 0) return true;
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+      }
+      return false;
+    },
+
+    async waitForFullDocument(timeoutMs = 30000) {
+      const deadline = performance.now() + timeoutMs;
+      while (performance.now() < deadline) {
+        if (allState().source.length === 0) {
+          if (fullDocumentCompleteMs == null) {
+            fullDocumentCompleteMs = performance.now() - timingStartedAt;
+          }
+          return true;
+        }
         await new Promise((resolve) => requestAnimationFrame(resolve));
       }
       return false;
@@ -151,9 +206,11 @@
     },
 
     result() {
+      const documentState = allState();
       return {
         firstVisibleTranslationMs,
         initialViewportCompleteMs,
+        fullDocumentCompleteMs,
         sourceExposureFrames,
         blankFrames,
         maxContinuousSourceExposureMs,
@@ -162,11 +219,20 @@
           ? performance.now() - exposureStartedAt
           : 0,
         trackedElements: tracked.size,
+        connectedElements: documentState.connected.length,
+        sourceRemaining: documentState.source.length,
+        blankElements: documentState.blank.length,
+        longTasks: [...longTasks],
+        maxLongTaskMs: longTasks.reduce(
+          (maximum, entry) => Math.max(maximum, entry.duration),
+          0
+        ),
       };
     },
 
     dispose() {
       if (frameHandle != null) cancelAnimationFrame(frameHandle);
+      if (longTaskObserver) longTaskObserver.disconnect();
     },
   };
 })();
