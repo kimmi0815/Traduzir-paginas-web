@@ -1,6 +1,6 @@
 {
-  "name": "translate-web-pages",
-  "version": "1.0.0",
+  "name": "native-translate",
+  "version": "11.0.0",
   "browserslist": [
     "firefox 63",
     "chrome 70"

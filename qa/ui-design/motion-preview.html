@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TWP · 訳文の出現を比べる</title>
+  <link rel="stylesheet" href="/motion-preview.css">
+</head>
+<body>
+<main>
+  <header class="intro">
+    <span class="eyebrow">TWP / MOTION STUDY</span>
+    <h1>訳文が、すっと馴染む。</h1>
+    <p>速さはそのままに、現れ方を少しだけ。<br>同じ文章で、3つの動きを比べてみてください。</p>
+  </header>
+  <section class="controls" aria-label="比較の操作">
+    <div class="control-top">
+      <div class="segments" role="group" aria-label="表示モード">
+        <button data-mode="translation" aria-pressed="false">通常</button>
+        <button data-mode="bilingual" aria-pressed="true">対訳</button>
+      </div>
+      <label>再生速度 <select id="speed"><option value="1">等速</option><option value="10">10%速度</option></select></label>
+      <label>応答 <select id="latency"><option value="normal">300ms</option><option value="delayed">一部を900msに</option></select></label>
+    </div>
+    <div class="control-bottom">
+      <button id="playAll" class="primary" disabled>まとめて翻訳</button>
+      <button id="restoreAll" disabled>原文へ戻す</button>
+      <span id="status" role="status">サンプルを準備しています…</span>
+    </div>
+    <p id="reducedNotice" hidden>OSの「動きを減らす」設定に従い、すべて即時表示します。</p>
+  </section>
+  <div class="studies">
+    <section class="study" data-preset="instant">
+      <div class="study-heading"><span class="number">01</span><h2>そのまま</h2><span class="duration">0ms</span></div>
+      <p class="description">今の速さ、そのまま。</p>
+      <div class="study-actions"><button class="replay" disabled aria-label="そのままを再生">再生</button><span class="state" role="status">準備中</span></div>
+      <iframe title="演出なしの翻訳サンプル" src="/motion-sample.html?preset=instant"></iframe>
+    </section>
+    <section class="study" data-preset="fade">
+      <div class="study-heading"><span class="number">02</span><h2>フェード</h2><span class="duration">150ms</span></div>
+      <p class="description">文字の濃さだけ、なめらかに。</p>
+      <div class="study-actions"><button class="replay" disabled aria-label="フェードを再生">再生</button><span class="state" role="status">準備中</span></div>
+      <iframe title="フェードする翻訳サンプル" src="/motion-sample.html?preset=fade"></iframe>
+    </section>
+    <section class="study recommended" data-preset="rise">
+      <div class="study-heading"><span class="number">03</span><h2>ふわっと</h2><span class="badge">推奨</span><span class="duration">180ms</span></div>
+      <p class="description">3pxの浮き上がりと、短いフェード。</p>
+      <div class="study-actions"><button class="replay" disabled aria-label="ふわっとを再生">再生</button><span class="state" role="status">準備中</span></div>
+      <iframe title="フェードと浮き上がりの翻訳サンプル" src="/motion-sample.html?preset=rise"></iframe>
+    </section>
+  </div>
+  <footer>
+    <p>応答時間は比較用の模擬値です。実際の翻訳処理に同じ固定訳文を返しています。10%速度では動きだけがゆっくりになります。</p>
+    <p>再生時に画面内にある段落だけが動きます。スクロールすると演出は終了し、残りの訳文は即時表示します。</p>
+    <p>この画面はサンプル上の演出評価用です。拡張機能の設定や、開いているページの翻訳には影響しません。</p>
+  </footer>
+</main>
+<script src="/motion-preview.js"></script>
+</body>
+</html>

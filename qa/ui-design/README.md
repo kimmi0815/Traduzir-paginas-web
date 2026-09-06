@@ -67,3 +67,16 @@ The subsequent settings-only polish, interaction checks, and review boundaries a
 The mock API does not prove real translation, extension popup sizing/lifecycle, browser permissions, or provider behavior. Load the generated Chromium build in the target browser and verify the toolbar popup, translate/restore, menu settings, PDF routing, and opening the options page. Recheck the performance fixture if any translation-core changes are made later.
 
 Build output: `build/TWP_10.2.5.0_Chromium_MV3`.
+
+## 訳文の出現アニメーション比較
+
+`node qa/ui-design/server.mjs` を起動し、`http://127.0.0.1:4190/motion-preview.html` を開く。
+通常／対訳、等速／10%速度、300ms／一部900msの応答を切り替え、3案を同時または個別に再生できる。初期状態は原文・対訳モード・等速で、自動再生しない。
+
+- 演出なし、150msのフェード、180msのフェード＋3px移動。開始不透明度は65%、イージングは `cubic-bezier(.2,0,0,1)`。
+- 各iframeで本体の `showOriginal.js`、`bilingual.js`、`pageTranslator.js` を使用する。拡張APIだけをQA用に置き換え、同じ固定英日ペアを返す。結果到着時刻は共通の再生開始時刻に揃える。遅延モードは最初の翻訳バッチを300ms、それ以降を900msで返す。
+- サンプルだけに用意した訳文要素を動かし、原文にはアニメーションを付けない。MutationObserverで同一更新内の文字変更を段落にまとめ、同じ段落では再始動しない。
+- 原文復元・再生・表示設定変更で古い応答をキャンセル。スクロール・非表示・reduced motionで演出を終了する。画面外にあった段落は後からスクロールしても動かない。
+- 英日の長さによる段落の高さの変化は通常の翻訳と共通で、アニメーションでは高さを変更しない。iframeの比較用マークアップは一般サイトへの実装方法を保証しない。本体への反映・新しい設定の追加・Asideへの配布はこの段階では行わない。
+
+検証は `node --test qa/ui-design/motion-preview.test.cjs`。Playwrightを解決できる `NODE_PATH` を使用し、必要なら `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` に既存のChromium実行ファイルを指定する。`TWP_MOTION_SCREENSHOT` にパスを指定すると10%速度の途中の描画を保存する。テスト用サーバーは空きポートを使用する。

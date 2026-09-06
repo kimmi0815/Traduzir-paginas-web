@@ -1,76 +1,43 @@
+# <img src="src/icons/icon-128.png" width="40" alt=""> Native Translate
 
-# <img src="https://github.com/FilipePS/Traduzir-paginas-web/blob/master/src/icons/icon-128.png" height="50"> Translate Web Pages
+**いつものブラウザに、標準のような翻訳を。**
 
-## TWP Fast — personal fork
+Chrome標準の翻訳に近い速さと操作感を目指した、TWPベースの翻訳拡張機能です。
 
-This fork develops Chrome-like translation speed and a compact native-style interface for Aside and other Chromium browsers. Current development is on **[`chrome-mv3`](https://github.com/kimmi0815/Traduzir-paginas-web/tree/chrome-mv3)**.
+- 高速なページ翻訳とスクロール先の先読み
+- 言語タブ中心のコンパクトなポップアップとシンプルな設定画面
+- 原文 → 訳文の順に読める対訳モード
+- 通常はグレー、翻訳中は青＋下線のA文アイコン
+- Google・Bing・Yandexの翻訳サービスとカスタム辞書
 
-**[別のPCで開発を再開する / Setup and current status](WORKING_NOTES.md)** · [UI preview and checks](qa/ui-design/README.md) · [Translation latency QA](qa/translation-latency/README.md)
+**[最新版をダウンロード](https://github.com/kimmi0815/Traduzir-paginas-web/releases/latest)** · **[導入手順](INSTALL.md)** · [変更履歴](CHANGELOG.md)
 
-The upstream documentation follows. Its store links and release badges refer to the original TWP, not this fork's local build.
+## ブラウザ対応
 
-Translate your page in real time using Google, Bing or Yandex.
+| ブラウザ | 配布と導入 |
+|---|---|
+| Aside / Chrome / Edge / BraveなどのChromium系 | Chromium MV3 ZIPを展開し、拡張機能画面から読み込み |
+| Firefoxデスクトップ | 未署名の開発・一時読み込み用ZIP。通常の常設インストールにはMozilla署名が必要 |
+| Safari / iOS | このリリースでは非対応 |
 
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/FilipePS/Traduzir-paginas-web?label=latest%20version&sort=semver)](https://github.com/FilipePS/Traduzir-paginas-web/releases)
-[![GitHub release date](https://img.shields.io/github/release-date/FilipePS/Traduzir-paginas-web?labely)](https://github.com/FilipePS/Traduzir-paginas-web/latest)
-[![GitHub issues](https://img.shields.io/github/issues/FilipePS/Traduzir-paginas-web?color=red)](https://github.com/FilipePS/Traduzir-paginas-web/issues)
-[![GitHub license](https://img.shields.io/github/license/FilipePS/Traduzir-paginas-web?color=lightgrey)](https://github.com/FilipePS/Traduzir-paginas-web/blob/master/LICENSE)
+Asideでの利用を中心に開発しています。各ブラウザ・各サイトでの動作を一律に保証するものではありません。ストア配布や自動更新はまだ提供していません。
 
-## Install
+## 開発
 
-### Firefox
-- Desktop users, download from [Mozilla Addons](https://addons.mozilla.org/firefox/addon/traduzir-paginas-web/).
-- Android users
-  1. Install the latest version of _Firefox (v120+)_.
-  2. Open the extension manager.
-  3. Scroll down and click **Find more add-ons**.
-  4. On the add-ons website, search for **TWP**.
-  5. Install the **TWP - Translate For Mobile** extension.
+```sh
+npm ci
+npm run build:local-sourcemaps
+```
 
-### Chrome, Edge and Brave
-- The extension will be officially released for these browsers in the future.
-- If you installed the extension in these browsers previously through a registry modification, please undo those changes.\
-Note: If you want to undo registry changes, download and run this [twp-registry-uninstall-self.reg](https://raw.githubusercontent.com/FilipePS/Traduzir-paginas-web/master/dist/chromium/twp-registry-uninstall-self.reg). If you want a deeper removal download and run this other file [twp-registry-uninstall-all.reg](https://raw.githubusercontent.com/FilipePS/Traduzir-paginas-web/master/dist/chromium/twp-registry-uninstall-all.reg)
+Chromiumの読み込み先は `build/NativeTranslate_11.0.0_Chromium_MV3/`。
+Firefox用は `build/NativeTranslate_11.0.0_Firefox_Unsigned/`。
 
-## Screenshots
-| Menu 1 | Menu 2 | Translated |
-| :--: | :--: | :--: |
-| <img src="https://addons.mozilla.org/user-media/previews/full/258/258434.png" height="200"> | <img src="https://addons.mozilla.org/user-media/previews/full/258/258435.png" height="200"> | <img src="https://addons.mozilla.org/user-media/previews/full/258/258436.png" height="200"> |
+[開発再開手順](WORKING_NOTES.md) · [UIの検証](qa/ui-design/README.md) · [翻訳速度の検証](qa/translation-latency/README.md)
 
-## Contribute
+アニメーション比較はQA資料として保存していますが、本体には含めていません。
 
-- To collaborate with the translation of the extension interface use [Crowdin](https://crowdin.com/project/translate-web-pages).
+## クレジットとライセンス
 
-## Donations
+[FilipePS / Translate Web Pages (TWP)](https://github.com/FilipePS/Traduzir-paginas-web) を基にした個人用フォークです。原作者・貢献者に感謝します。[MPL-2.0](LICENSE)に従ってソースを公開しています。[上流の説明資料](docs/UPSTREAM_README.md)内のストアリンクは元のTWPを指します。
 
-To make a donation use [Patreon](https://www.patreon.com/filipeps).
-
-[<img src="https://github.com/FilipePS/Traduzir-paginas-web/blob/master/src/icons/patreon.png" alt="Patreon" height="50">](https://www.patreon.com/filipeps)
-
-## FAQ
-
-**What can this extension do?**
-
-Your current page is translated without having to open new tabs.
-It is possible to change the translation language.
-You can select to automatically translate.
-To change the translation engine just touch the Google Translate icon. 
-
-**Why do you need to access your data on all the websites you visit?**
-
-To translate any website it is necessary to access and modify the text of the web pages. And the extension can only do that, with that permission.
-
-**How are the pages translated?**
-
-The pages are translated using the Google or Yandex translation engine (you choose).
-
-**And how's my privacy?**
-
-[Privacy policy](https://addons.mozilla.org/addon/traduzir-paginas-web/privacy/): We do not collect any information. However, to translate, the contents of the web pages will be sent to Google or Yandex servers.
-
-**Limitations**
-
-Some pages like [support.mozilla.org](https://support.mozilla.org/) and [addons.mozilla.org](http://addons.mozilla.org/) will not be translated. For security reasons, the browser blocks extensions from accessing these sites.
-
-## Build instructions
-- You can see all the build instructions in the [build-instructions.md](build-instructions.md) file.
+Googleまたはブラウザ各社の公式製品ではありません。翻訳対象のテキストは選択した翻訳サービスに送信されます。

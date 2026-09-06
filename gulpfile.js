@@ -8,15 +8,13 @@ const sourcemaps = require("gulp-sourcemaps");
 
 const crx3 = require("crx3");
 
-const remoteSourceMaps =
-  process.argv[2] === "--local-sourcemaps" ? false : true;
+const remoteSourceMaps = false; // Fork releases always ship local source maps.
 const version = JSON.parse(
   fs.readFileSync("src/manifest.json", "utf8")
 ).version;
 
-const chromium_folder_name = `TWP_${version}_Chromium_MV3`;
-const firefox_folder_name = `TWP_${version}_Firefox`;
-const firefox_selfhosted_folder_name = `TWP_${version}_Firefox_selfhosted`;
+const chromium_folder_name = `NativeTranslate_${version}_Chromium_MV3`;
+const firefox_folder_name = `NativeTranslate_${version}_Firefox_Unsigned`;
 
 const mappath = `../maps/${version}`;
 const mapconfig = remoteSourceMaps
@@ -59,7 +57,7 @@ gulp.task("firefox-copy", () => {
 
 gulp.task("copy-LICENSE", () => {
   return gulp
-    .src(["LICENSE"], {encoding: false})
+    .src(["LICENSE", "INSTALL.md", "CHANGELOG.md"], {encoding: false})
     .pipe(gulp.dest(`build/${firefox_folder_name}`));
 });
 
@@ -136,30 +134,6 @@ gulp.task("firefox-move-sourcemap", (cb) => {
   });
 });
 
-gulp.task("firefox-self-hosted", (cb) => {
-  return new Promise((resolve, reject) => {
-    gulp
-      .src([`build/${firefox_folder_name}/**/**`], {encoding: false})
-      .pipe(gulp.dest(`build/${firefox_selfhosted_folder_name}`))
-      .on("error", reject)
-      .on("end", resolve);
-  }).then(() => {
-    const manifest = JSON.parse(
-      fs.readFileSync(
-        `build/${firefox_selfhosted_folder_name}/manifest.json`,
-        "utf8"
-      )
-    );
-    manifest.browser_specific_settings.gecko.update_url =
-      "https://raw.githubusercontent.com/FilipePS/Traduzir-paginas-web/master/dist/firefox/updates.json";
-    fs.writeFileSync(
-      `build/${firefox_selfhosted_folder_name}/manifest.json`,
-      JSON.stringify(manifest, null, 4),
-      "utf8"
-    );
-  });
-});
-
 gulp.task("firefox-rename", (cb) => {
   fs.renameSync(
     `build/${firefox_folder_name}/manifest.json`,
@@ -175,14 +149,7 @@ gulp.task("firefox-rename", (cb) => {
 gulp.task("firefox-zip", () => {
   return gulp
     .src([`build/${firefox_folder_name}/**/*`], {encoding: false})
-    .pipe(zip(`TWP_${version}_Firefox.zip`))
-    .pipe(gulp.dest("build"));
-});
-
-gulp.task("firefox-self-hosted-zip", () => {
-  return gulp
-    .src([`build/${firefox_selfhosted_folder_name}/**/*`], {encoding: false})
-    .pipe(zip(`TWP_${version}_Firefox_selfhosted.zip`))
+    .pipe(zip(`${firefox_folder_name}.zip`))
     .pipe(gulp.dest("build"));
 });
 
@@ -234,9 +201,7 @@ gulp.task(
     "firefox-rename",
     "firefox-babel",
     "firefox-move-sourcemap",
-    "firefox-self-hosted",
-    "firefox-zip",
-    "firefox-self-hosted-zip"
+    "firefox-zip"
   )
 );
 gulp.task(

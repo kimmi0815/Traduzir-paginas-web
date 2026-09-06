@@ -1,4 +1,4 @@
-# TWP Fast — 開発の再開手順
+# Native Translate — 開発の再開手順
 
 最終更新: 2026-09-05。開発ブランチは `chrome-mv3`。
 
@@ -37,7 +37,7 @@ npm run build:local-sourcemaps
 ## Aside / Chromiumへ読み込む
 
 1. 拡張機能の管理画面（`chrome://extensions/`、Asideでは `aside://extensions/`）を開き、デベロッパーモードを有効にする。
-2. 「パッケージ化されていない拡張機能を読み込む」で、チェックアウト先の **`build/TWP_10.2.5.0_Chromium_MV3/`** を選択する。
+2. 「パッケージ化されていない拡張機能を読み込む」で、チェックアウト先の **`build/NativeTranslate_11.0.0_Chromium_MV3/`** を選択する。
 3. フォルダ直下に `manifest.json` があることを確認する。リポジトリのルートや `build/` 自体を選ぶと「マニフェストを読み込めませんでした」になる。
 4. 標準版とこのフォークを同時に有効にすると翻訳が重複する可能性があるため、使用する方を選ぶ。既存版を削除する必要はない。
 5. コード変更後は再ビルドし、拡張機能カードの再読み込みボタンを押す。既に開いていたWebページも再読み込みして、更新後のコンテンツスクリプトを使う。
@@ -110,3 +110,7 @@ git remote add upstream https://github.com/FilipePS/Traduzir-paginas-web.git
 `src/contentScript/bilingual.js` が段落・見出し・リスト項目・表セルなどの原文を記録し、訳文の前に原文テキストを表示する。原文側にIDや操作部品を複製せず、元DOMのリンクやイベントは訳文側に保持する。子段落を持つ外側のコンテナ、ナビゲーションや編集領域は対訳の重複対象外。サイト固有の固定高・特殊レイアウトとAside実機での読み心地は追加確認が必要。
 
 検証: `node --test qa/ui-design/page-popup.test.mjs`。Chromium統合検証はPlaywrightを解決できる環境で `node --test qa/ui-design/bilingual.test.cjs`。必要に応じて `NODE_PATH` と `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` を指定。翻訳APIは固定応答に置換し、実際のページ翻訳処理で順序・リンク保持・動的追記・復元・遅延応答の無効化、および実ポップアップのモード切り替えを確認する。外部サービスの翻訳品質を測るテストではない。
+
+## リブランド・配布（11.0.0）
+
+製品名は Native Translate。バージョンは既存の10.2.5.0から更新できる11.0.0。配布・導入方法は INSTALL.md、変更点は CHANGELOG.md を参照。Firefoxにはフォーク固有のIDを使用し、上流の自動更新先を含めない。アニメーション試作はQA資料としてのみ保存し、本体には導入しない。
